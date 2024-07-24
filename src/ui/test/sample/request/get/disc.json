@@ -1,0 +1,11 @@
+{
+  "method": "get",
+  "path": "disc",
+  "name": "", 
+  "releaseBefore": 0,
+  "releaseAfter": 0,
+  "hasArtists": [],
+  "isInStock": true,
+  "priceLowest": 0,
+  "priceHighest": -1
+}

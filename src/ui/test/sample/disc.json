@@ -1,0 +1,9 @@
+{
+  "id": 0, // tarck id
+  "name": "Track name",
+  "releaseDate": 0, // epoch
+  "artists": ["_oid"], // artist id
+  "stockCount": 10, // stock count
+  "price": 100, // price
+  "image": "file://", // url or base64 string
+}

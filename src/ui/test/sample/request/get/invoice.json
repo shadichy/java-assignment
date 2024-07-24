@@ -1,0 +1,9 @@
+{
+  "method": "get",
+  "path": "invoice",
+  "id": 0,    
+  "transactBefore": 0,
+  "transactAfter": 0,
+  "ofCustomers": [],
+  "ofDiscs": [] 
+}

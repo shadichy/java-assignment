@@ -1,0 +1,10 @@
+  {
+    "id": "_oid",
+    "name": "Artist name",
+    "debutDate": 0,
+    "description" : "",
+    "albums": {
+      "Album Name": [],
+      "uncategoried": [0]
+    }
+  }

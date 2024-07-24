@@ -1,0 +1,10 @@
+{
+  "method": "get",
+  "path": "customer",
+  "id": 0,
+  "name": "",
+  "email": "",
+  "hasPhones": [],
+  "createdBefore": 0,
+  "createdAfter": 0
+}

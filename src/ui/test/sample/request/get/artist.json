@@ -1,0 +1,11 @@
+{
+  "method": "get",
+  "path": "artist",
+  "id": "oid",
+  "name": "",
+  "desc": "",
+  "   ": 0,
+  "debutAfter": 0,
+  "hasAlbums    ": [],
+  "hasTracks": []
+}

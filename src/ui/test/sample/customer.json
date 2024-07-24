@@ -1,0 +1,16 @@
+{
+  "id": 0, // customer id
+  "name": "Customer Name",
+  "phoneNo": ["+84000000000"],
+  "email": "a@b.c",
+  "createdDate": 0, // epoch
+  "history": {
+    "0": { // invoice id
+      "tracks": {
+        "0": 0 // track id: count
+      },
+      "date": 0, // transaction date (epoch)
+      "discount": 0 // average discount
+    }
+  }
+}
