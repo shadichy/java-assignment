@@ -35,7 +35,7 @@ class DiscTableRow {
       key: key,
       decoration: decoration,
       children: [
-        Text(disc.id.toString()),
+        // Text(disc.id.toString()),
         DiscImage(image: disc.image, size: 64),
         Text(disc.name),
         // Text((await disc.artists).map((e) => e.name).join(", ")),
@@ -52,7 +52,10 @@ class DiscTableRow {
         Text(disc.stockCount.toString()),
         Text(disc.price.toString()),
         TextButton(
-          onPressed: () => Cart().addToCart(disc),
+          onPressed: () {
+            if (disc.stockCount == 0) return;
+            Cart().addToCart(disc);
+          },
           style: TextButton.styleFrom(
             backgroundColor: c.tertiaryContainer,
           ),
@@ -114,20 +117,20 @@ class _DiscTableState extends State<DiscTable> {
       child: Table(
         // border: TableBorder(bottom: BorderSide(color: c.outlineVariant)),
         columnWidths: const {
-          0: IntrinsicColumnWidth(),
-          1: FixedColumnWidth(64),
+          // 0: IntrinsicColumnWidth(),
+          0: FixedColumnWidth(64),
+          2: IntrinsicColumnWidth(),
           3: IntrinsicColumnWidth(),
           4: IntrinsicColumnWidth(),
           5: IntrinsicColumnWidth(),
-          6: IntrinsicColumnWidth(),
+          6: FixedColumnWidth(100),
           7: FixedColumnWidth(100),
-          8: FixedColumnWidth(100),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
           TableRow(
             children: [
-              const Text("ID"),
+              // const Text("ID"),
               const SizedBox(),
               const Text("Name"),
               const Text("Artists"),
@@ -178,7 +181,7 @@ class InvoiceTableRow {
       key: key,
       decoration: decoration,
       children: [
-        Text(invoice.id.toString()),
+        // Text(invoice.id.toString()),
         Text((await invoice.customer).name),
         Column(
           mainAxisSize: MainAxisSize.min,
@@ -290,17 +293,17 @@ class _InvoiceTableState extends State<InvoiceTable> {
       child: Table(
         // border: TableBorder(bottom: BorderSide(color: c.outlineVariant)),
         columnWidths: const {
+          // 0: IntrinsicColumnWidth(),
           0: IntrinsicColumnWidth(),
-          1: IntrinsicColumnWidth(),
-          2: FixedColumnWidth(100),
-          4: IntrinsicColumnWidth(),
-          5: FixedColumnWidth(100),
+          1: FixedColumnWidth(100),
+          3: IntrinsicColumnWidth(),
+          4: FixedColumnWidth(100),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
           TableRow(
             children: [
-              const Text("ID"),
+              // const Text("ID"),
               const Text("Customer"),
               const SizedBox(),
               const Text("Discs"),
@@ -348,7 +351,7 @@ class CustomerTableRow {
       key: key,
       decoration: decoration,
       children: [
-        Text(customer.id.toString()),
+        // Text(customer.id.toString()),
         // CustomerImage(image: customer.image, size: 64),
         Text(customer.name),
         Text(customer.email),
@@ -426,18 +429,18 @@ class _CustomerTableState extends State<CustomerTable> {
       child: Table(
         // border: TableBorder(bottom: BorderSide(color: c.outlineVariant)),
         columnWidths: const {
-          0: IntrinsicColumnWidth(),
+          // 0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
           2: IntrinsicColumnWidth(),
           3: IntrinsicColumnWidth(),
-          4: IntrinsicColumnWidth(),
+          4: FixedColumnWidth(100),
           5: FixedColumnWidth(100),
-          6: FixedColumnWidth(100),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
           TableRow(
             children: [
-              const Text("ID"),
+              // const Text("ID"),
               const Text("Name"),
               const Text("Email"),
               const Text("Phone numbers"),
@@ -489,7 +492,7 @@ class ArtistTableRow {
       key: key,
       decoration: decoration,
       children: [
-        Text(artist.id.toString()),
+        // Text(artist.id.toString()),
         // ArtistImage(image: artist.image, size: 64),
         Text(artist.name),
         Text(artist.description),
@@ -524,7 +527,8 @@ class ArtistTableRow {
             context: context,
             builder: (context) => AlertDialog(
               title: const Text("Confirm deletion"),
-              content: Text("Artist ${artist.id} and related tracks will be deleted"),
+              content: Text(
+                  "Artist ${artist.id} and related tracks will be deleted"),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -609,18 +613,18 @@ class _ArtistTableState extends State<ArtistTable> {
       child: Table(
         // border: TableBorder(bottom: BorderSide(color: c.outlineVariant)),
         columnWidths: const {
+          // 0: IntrinsicColumnWidth(),
           0: IntrinsicColumnWidth(),
-          1: IntrinsicColumnWidth(),
-          2: FixedColumnWidth(200),
-          3: IntrinsicColumnWidth(),
-          5: FixedColumnWidth(100),
+          1: FixedColumnWidth(200),
+          2: IntrinsicColumnWidth(),
+          4: FixedColumnWidth(100),
           6: FixedColumnWidth(100),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
           TableRow(
             children: [
-              const Text("ID"),
+              // const Text("ID"),
               const Text("Name"),
               const Text("Description"),
               const Text("Debut date"),

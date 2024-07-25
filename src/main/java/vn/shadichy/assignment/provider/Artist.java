@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Entity(value = "Artist", indices = {
         @Index(fields = "name", type = IndexType.NON_UNIQUE),
         @Index(fields = "albums", type = IndexType.NON_UNIQUE),
-        @Index(fields = "debutDate", type = IndexType.NON_UNIQUE),
+        @Index(fields = "date", type = IndexType.NON_UNIQUE),
         @Index(fields = "description", type = IndexType.NON_UNIQUE),
         @Index(fields = "albumNames", type = IndexType.NON_UNIQUE),
         @Index(fields = "tracks", type = IndexType.NON_UNIQUE),
@@ -25,22 +25,22 @@ public class Artist extends DatabaseEntry implements Serializable {
     private final int id;
     private String name;
     private Map<String, List<Integer>> albums;
-    private Long debutDate;
+    private Long date;
     private String description;
-    private Set<String> albumNames;
+    private List<String> albumNames;
     private List<Integer> tracks;
 
-    public Artist(int id, String name, Map<String, List<Integer>> albums, Long debutDate, String description) {
-        super(ID(id, name, debutDate));
+    public Artist(int id, String name, Map<String, List<Integer>> albums, Long date, String description) {
+        super(ID(id, name, date), date);
         this.id = super.getId();
         this.name = name;
         setAlbums(albums);
-        this.debutDate = debutDate;
+        this.date = date;
         this.description = description;
     }
 
-    private static int ID(int id, String name, Long debutDate) {
-        return id != -1 ? id : Objects.hash(name, debutDate);
+    private static int ID(int id, String name, Long date) {
+        return id != -1 ? id : Objects.hash(name, date);
     }
 
     public static Artist fromMap(Map<?, ?> artist) {
@@ -48,25 +48,26 @@ public class Artist extends DatabaseEntry implements Serializable {
                 TypeCaster.toInt(artist.get("id"), -1),
                 (String) artist.get("name"),
                 castAlbum((Map<?, ?>) artist.get("albums")),
-                TypeCaster.toLong(artist.get("debutDate"), 0L),
+                TypeCaster.toLong(artist.get("date"), 0L),
                 (String) artist.get("description")
         );
     }
 
     public static Artist addNew(Map<Object, Object> artist) {
         artist.put("id", -1);
+        artist.put("date", artist.get("debutDate")); // remap
         return Artist.fromMap(artist);
     }
 
     private static Map<String, List<Integer>> castAlbum(Map<?, ?> albums) {
-        if (albums == null) return new HashMap<>();
+        if (albums == null) return Map.of();
         return TypeCaster.castMap(albums, k -> (String) k, v -> TypeCaster.castList((List<?>) v, TypeCaster::toInt));
     }
 
-    public void set(String name, Map<String, List<Integer>> albums, Long debutDate, String description) {
+    public void set(String name, Map<String, List<Integer>> albums, Long date, String description) {
         if (name != null) this.name = name;
         if (albums != null) this.albums = albums;
-        if (debutDate != null) this.debutDate = debutDate;
+        if (date != null) this.date = date;
         if (description != null) this.description = description;
     }
 
@@ -77,16 +78,16 @@ public class Artist extends DatabaseEntry implements Serializable {
     public void setAlbums(Map<?, ?> albums) {
         this.albums = castAlbum(albums);
         if (albums != null) {
-            this.albumNames = this.albums.keySet();
+            this.albumNames = List.copyOf(this.albums.keySet());
             this.tracks = this.albums.values().stream().flatMap(List::stream).collect(Collectors.toList());
         } else {
-            this.albumNames = Set.of();
+            this.albumNames = List.of();
             this.tracks = List.of();
         }
     }
 
-    public void setDebutDate(Long debutDate) {
-        this.debutDate = debutDate;
+    public void date(Long date) {
+        this.date = date;
     }
 
     public void setDescription(String description) {
@@ -99,7 +100,7 @@ public class Artist extends DatabaseEntry implements Serializable {
             put("id", id);
             put("name", name);
             put("albums", albums);
-            put("debutDate", debutDate);
+            put("date", date);
             put("description", description);
         }};
     }
@@ -125,7 +126,7 @@ public class Artist extends DatabaseEntry implements Serializable {
                     TypeCaster.toInt(document.get("id"), -1),
                     document.get("name", String.class),
                     castAlbum(document.get("albums", Map.class)),
-                    TypeCaster.toLong(document.get("debutDate"), 0L),
+                    TypeCaster.toLong(document.get("date"), 0L),
                     document.get("description", String.class)
             );
         }

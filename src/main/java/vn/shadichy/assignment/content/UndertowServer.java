@@ -24,6 +24,7 @@ import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.StatusCodes;
 import org.dizitart.no2.Nitrite;
+import org.dizitart.no2.collection.FindOptions;
 import org.dizitart.no2.common.WriteResult;
 import org.dizitart.no2.exceptions.NotIdentifiableException;
 import org.dizitart.no2.exceptions.UniqueConstraintException;
@@ -52,10 +53,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -95,19 +93,47 @@ public class UndertowServer extends Thread {
         return handler;
     }
 
+    private static <T> List<T> reversedView(final List<T> list)
+    {
+        return new AbstractList<T>()
+        {
+            @Override
+            public T get(int index)
+            {
+                return list.get(list.size()-1-index);
+            }
+
+            @Override
+            public int size()
+            {
+                return list.size();
+            }
+        };
+    }
+
     private <T extends DatabaseEntry> String findToArr(ObjectRepository<T> repository, List<NitriteFilter> filters, int offset, int limit) {
         Cursor<T> cursor;
+
+        FindOptions opts = new FindOptions();
 
         if (filters.isEmpty()) cursor = repository.find();
         else if (filters.size() == 1) cursor = repository.find(filters.get(0));
         else cursor = repository.find(Filter.and(filters.toArray(new NitriteFilter[0])));
 
-        Stream<T> stream = cursor.toList().stream().filter(Objects::nonNull).skip(offset);
+        List<T> result = cursor.toList();
+//        try {
+//            if (result.get(0) instanceof Invoice) Collections.reverse(result);
+//        } catch (Exception ignored) {
+//        }
+//        Collections.reverse(result);
+
+        Stream<T> stream = reversedView(result).stream().filter(Objects::nonNull).skip(offset);
         if (limit > 0) stream = stream.limit(limit);
 
         return "[" + stream.map(DatabaseEntry::get).collect(Collectors.joining(",")) + "]";
     }
 
+    @Override
     public void run() {
         final IdentityManager identityManager = new KeyIdentityManager();
         SSLContext sslContext;
@@ -187,9 +213,9 @@ public class UndertowServer extends Thread {
                                         String desc = (String) body.get("description");
                                         if (desc != null) f.add(where("description").regex(desc));
                                         Long debutBefore = TypeCaster.toLong(body.get("debutBefore"));
-                                        if (debutBefore != null) f.add(where("debutDate").lte(debutBefore));
+                                        if (debutBefore != null) f.add(where("date").lte(debutBefore));
                                         Integer debutAfter = TypeCaster.toInt(body.get("debutAfter"));
-                                        if (debutAfter != null) f.add(where("debutDate").gte(debutAfter));
+                                        if (debutAfter != null) f.add(where("date").gte(debutAfter));
                                         List<String> hasAlbums = (List) body.get("hasAlbums");
                                         if (hasAlbums != null && !hasAlbums.isEmpty()) {
                                             f.add(where("albumNames").elemMatch($.in(hasAlbums.toArray(new String[0]))));
@@ -210,9 +236,9 @@ public class UndertowServer extends Thread {
                                         String email = (String) body.get("email");
                                         if (email != null) f.add(where("desc").regex(email));
                                         Integer createdBefore = TypeCaster.toInt(body.get("createdBefore"));
-                                        if (createdBefore != null) f.add(where("createdDate").lte(createdBefore));
+                                        if (createdBefore != null) f.add(where("date").lte(createdBefore));
                                         Integer createdAfter = TypeCaster.toInt(body.get("createdAfter"));
-                                        if (createdAfter != null) f.add(where("createdDate").gte(createdAfter));
+                                        if (createdAfter != null) f.add(where("date").gte(createdAfter));
                                         List<String> hasPhones = (List) body.get("hasPhones");
                                         if (hasPhones != null && !hasPhones.isEmpty())
                                             f.add(where("phoneNo").elemMatch($.in(hasPhones.toArray(new String[0]))));
@@ -226,9 +252,9 @@ public class UndertowServer extends Thread {
                                         String name = (String) body.get("name");
                                         if (name != null) f.add(where("name").regex(name));
                                         Integer releaseBefore = TypeCaster.toInt(body.get("releaseBefore"));
-                                        if (releaseBefore != null) f.add(where("releaseDate").lte(releaseBefore));
+                                        if (releaseBefore != null) f.add(where("date").lte(releaseBefore));
                                         Integer releaseAfter = TypeCaster.toInt(body.get("releaseAfter"));
-                                        if (releaseAfter != null) f.add(where("releaseDate").gte(releaseAfter));
+                                        if (releaseAfter != null) f.add(where("date").gte(releaseAfter));
                                         Integer stockHighest = TypeCaster.toInt(body.get("stockHighest"));
                                         if (stockHighest != null) f.add(where("stockCount").lte(stockHighest));
                                         Integer stockLowest = TypeCaster.toInt(body.get("stockLowest"));
@@ -278,8 +304,7 @@ public class UndertowServer extends Thread {
                                                 artists.insert(castList(data, Artist::addNew).toArray(new Artist[0]));
                                         case "customer" ->
                                                 customers.insert(castList(data, Customer::addNew).toArray(new Customer[0]));
-                                        case "disc" ->
-                                                discs.insert(castList(data, Disc::addNew).toArray(new Disc[0]));
+                                        case "disc" -> discs.insert(castList(data, Disc::addNew).toArray(new Disc[0]));
                                         case "invoice" ->
                                                 invoices.insert(castList(data, Invoice::fromMap).toArray(new Invoice[0]));
                                         default -> {

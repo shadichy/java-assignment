@@ -84,9 +84,7 @@ final class Data {
   }
 
   Future fetch(Map body) async {
-    var response = jsonDecode((await post(Uri.https("$hostname:$httpsPort"),
-            headers: {"Authorization": encode}, body: jsonEncode(body)))
-        .body);
+    var response = jsonDecode((await post(Uri.https("$hostname:$httpsPort"), headers: {"Authorization": encode}, body: jsonEncode(body))).body);
 
     // if (body["path"]! is String || body["moethod"]! is String) return response;
 

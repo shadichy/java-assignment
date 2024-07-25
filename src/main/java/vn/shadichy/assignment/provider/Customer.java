@@ -17,7 +17,7 @@ import java.util.Objects;
 @Entity(value = "Customer", indices = {
         @Index(fields = "name", type = IndexType.NON_UNIQUE),
         @Index(fields = "phoneNo", type = IndexType.NON_UNIQUE),
-        @Index(fields = "createdDate", type = IndexType.NON_UNIQUE),
+        @Index(fields = "date", type = IndexType.NON_UNIQUE),
         @Index(fields = "email", type = IndexType.NON_UNIQUE),
 })
 public class Customer extends DatabaseEntry implements Serializable {
@@ -25,20 +25,20 @@ public class Customer extends DatabaseEntry implements Serializable {
     private final int id;
     private String name;
     private List<String> phoneNo;
-    private Long createdDate;
+    private Long date;
     private String email;
 
-    public Customer(int id, String name, List<String> phoneNo, Long createdDate, String email) {
-        super(ID(id, name, phoneNo, createdDate, email));
+    public Customer(int id, String name, List<String> phoneNo, Long date, String email) {
+        super(ID(id, name, phoneNo, date, email), date);
         this.id = super.getId();
         this.name = name;
         this.phoneNo = phoneNo;
-        this.createdDate = createdDate;
+        this.date = date;
         this.email = email;
     }
 
-    public static int ID(int id, String name, List<String> phoneNo, Long createdDate, String email) {
-        return id != -1 ? id : Objects.hash(name, phoneNo, createdDate, email);
+    public static int ID(int id, String name, List<String> phoneNo, Long date, String email) {
+        return id != -1 ? id : Objects.hash(name, phoneNo, date, email);
     }
 
     public static Customer fromMap(Map<?, ?> customer) {
@@ -46,20 +46,21 @@ public class Customer extends DatabaseEntry implements Serializable {
                 TypeCaster.toInt(customer.get("id"), -1),
                 (String) customer.get("name"),
                 (List) customer.get("phoneNo"),
-                TypeCaster.toLong(customer.get("createdDate"), 0L),
+                TypeCaster.toLong(customer.get("date"), 0L),
                 (String) customer.get("email")
         );
     }
 
     public static Customer addNew(Map<Object, Object> customer) {
         customer.put("id", -1);
+        customer.put("date", customer.get("createdDate"));
         return Customer.fromMap(customer);
     }
 
-    public void set(String name, List<String> phoneNo, Long createdDate, String email) {
+    public void set(String name, List<String> phoneNo, Long date, String email) {
         if (name != null) this.name = name;
         if (phoneNo != null) this.phoneNo = phoneNo;
-        if (createdDate != null) this.createdDate = createdDate;
+        if (date != null) this.date = date;
         if (email != null) this.email = email;
     }
 
@@ -71,8 +72,8 @@ public class Customer extends DatabaseEntry implements Serializable {
         this.phoneNo = phoneNo;
     }
 
-    public void setCreatedDate(Long createdDate) {
-        this.createdDate = createdDate;
+    public void date(Long date) {
+        this.date = date;
     }
 
     public void setEmail(String email) {
@@ -85,7 +86,7 @@ public class Customer extends DatabaseEntry implements Serializable {
             put("id", id);
             put("name", name);
             put("phoneNo", phoneNo);
-            put("createdDate", createdDate);
+            put("date", date);
             put("email", email);
         }};
     }
@@ -107,7 +108,7 @@ public class Customer extends DatabaseEntry implements Serializable {
                     TypeCaster.toInt(document.get("id"), -1),
                     document.get("name", String.class),
                     document.get("phoneNo", List.class),
-                    TypeCaster.toLong(document.get("createdDate"), 0L),
+                    TypeCaster.toLong(document.get("date"), 0L),
                     document.get("email", String.class)
             );
         }

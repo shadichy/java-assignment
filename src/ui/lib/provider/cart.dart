@@ -33,7 +33,7 @@ final class Cart {
 
   Invoice get createInvoice {
     return Invoice(
-      trackIDs: _cart.map((k, v) => MapEntry(k, v.value)),
+      trackIDs: _cart.map((_, v) => MapEntry(v.key.id, v.value)),
       customerID: customer!.id,
       date: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
@@ -46,5 +46,7 @@ final class Cart {
       "data": [createInvoice],
     });
     _cart.clear();
+    customer = null;
+    (notifier ?? () {})();
   }
 }

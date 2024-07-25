@@ -154,7 +154,10 @@ class _DiscCardState extends State<DiscCard> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => Cart().addToCart(widget.disc),
+                  onPressed: () {
+                    if (widget.disc.stockCount == 0) return;
+                    Cart().addToCart(widget.disc);
+                  },
                   style: TextButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),

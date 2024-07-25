@@ -34,19 +34,25 @@ void main() {
   //   expect(find.text('0'), findsOneWidget);
   //   expect(find.text('1'), findsNothing);
 
-  //   // Tap the '+' icon and trigger a frame.
-  //   await tester.tap(find.byIcon(Icons.add));
-  //   await tester.pump();
+    //   // Tap the '+' icon and trigger a frame.
+    //   await tester.tap(find.byIcon(Icons.add));
+    //   await tester.pump();
 
-  //   // Verify that our counter has incremented.
-  //   expect(find.text('0'), findsNothing);
-  //   expect(find.text('1'), findsOneWidget);
-  // });
-  Map<int, CC?> a = {0:CC(1, 2), 1: CC(2, 3), 2: CC(3, 4)};
-  mod(a[1]!);
-  print(a.length);
-  a[3] = null;
-  print(a.length);
-  print(a[3]);
-  print(a[4]);
-}
+    //   // Verify that our counter has incremented.
+    //   expect(find.text('0'), findsNothing);
+    //   expect(find.text('1'), findsOneWidget);
+    // });
+    Map<int, CC?> a = {0:CC(1, 2), 1: CC(2, 3), 2: CC(3, 4)};
+    mod(a[1]!);
+    print(a.length);
+    a[3] = null;
+    print(a.length);
+    print(a[3]);
+    print(a[4]);
+    int b=5;
+    print(b);
+    while (b--!=0) {
+      print(b);
+    }
+
+  }

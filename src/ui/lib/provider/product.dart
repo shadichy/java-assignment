@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 
 DateTime _epoch(int date) => DateTime.fromMillisecondsSinceEpoch(date * 1000);
 
+String _dec(String? data) {
+  return data == null ? "" : utf8.decode((data).runes.toList());
+}
+
 Future<Disc> discFromID(int id) async {
   try {
     return Data().getDiscs.firstWhere((e) => e.id == id);
@@ -52,7 +56,9 @@ Future<List<Invoice>> _history(int customer) async => (await Data().fetch({
 abstract final class BaseAbstractProduct {
   final int id;
   BaseAbstractProduct({required this.id});
-  Map<String, dynamic> toMap() => throw UnimplementedError();
+
+  @protected
+  Map<String, dynamic> toMap();
   Map<String, dynamic> toJson() => toMap();
 
   @override
@@ -89,9 +95,9 @@ final class Artist extends BaseAbstractProduct {
   Artist.fromMap(Map data)
       : this(
           id: data["id"],
-          name: data["name"] ?? "",
-          debutDate: data["debutDate"],
-          description: data["description"],
+          name: _dec(data["name"]),
+          debutDate: data["date"],
+          description: _dec(data["description"]),
           albums: (data["albums"] as Map? ?? {}).map((k, v) {
             return MapEntry(
               k as String,
@@ -169,8 +175,8 @@ final class Disc extends BaseAbstractProduct {
   Disc.fromMap(Map data)
       : this(
           id: data["id"],
-          name: data["name"] ?? "",
-          releaseDate: data["releaseDate"],
+          name:_dec(data["name"]),
+          releaseDate: data["date"],
           artistIDs: (data["artists"] as List?)?.map((e) {
                 return (e as num).toInt();
               }).toList() ??
@@ -246,7 +252,7 @@ final class Customer extends BaseAbstractProduct {
       r.addAll(await invoice.tracks);
     }
     return r;
-  }     
+  }
 
   Customer({
     required super.id,
@@ -259,10 +265,10 @@ final class Customer extends BaseAbstractProduct {
   Customer.fromMap(Map data)
       : this(
           id: data["id"],
-          name: data["name"] ?? "",
+          name:_dec(data["name"]),
           phoneNo: (data["phoneNo"] as List?)?.cast<String>() ?? [],
-          createdDate: data["createdDate"],
-          email: data["email"] ?? "",
+          createdDate: data["date"],
+          email:_dec(data["email"]),
         );
 
   Customer.fromJson(Map data) : this.fromMap(data);
@@ -353,7 +359,7 @@ final class Invoice extends BaseAbstractProduct {
 
   @override
   Map<String, dynamic> toMap() => {
-        "tracks": trackIDs,
+        "tracks": trackIDs.map((k, v) => MapEntry("$k", v)),
         "customer": customerID,
         "date": date.millisecondsSinceEpoch ~/ 1000,
         "discount": discount,

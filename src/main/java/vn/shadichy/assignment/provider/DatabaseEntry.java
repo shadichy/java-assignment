@@ -24,13 +24,19 @@ abstract class EntryConverter<T extends DatabaseEntry> implements EntityConverte
 
 public abstract class DatabaseEntry implements EntryInterface {
     private final int id;
+    private final long date;
 
-    protected DatabaseEntry(int id) {
+    protected DatabaseEntry(int id, long date) {
         this.id = id;
+        this.date = date;
     }
 
     public int getId() {
         return id;
+    }
+
+    public long date() {
+        return date;
     }
     @Override
     public String toString() {

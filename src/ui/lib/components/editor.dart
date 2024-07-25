@@ -31,10 +31,6 @@ class DiscEditor extends StatefulWidget {
 class _DiscEditorState extends State<DiscEditor> {
   List<Artist> artists = [];
   List<String> artistNames = [];
-  // late TextEditingController name;
-  // late TextEditingController stockCount;
-  // late TextEditingController price;
-  // DateTime releaseDate = DateTime.now();
 
   late Disc disc = widget.disc ??
       Disc(
@@ -49,24 +45,37 @@ class _DiscEditorState extends State<DiscEditor> {
   int count = 1;
   double totalPrice = 0;
 
+  late final nameCtl = TextEditingController(text: disc.name);
+  late final stockCtl = TextEditingController(text: "${disc.stockCount}");
+  late final priceCtl = TextEditingController(text: "${disc.price}");
+
   @override
   void initState() {
     super.initState();
-    setDisc();
-    // _setCountNoCB(widget.count);
-    // name = TextEditingController(text: widget.disc?.name);
-    // stockCount = TextEditingController(text: "${widget.disc?.stockCount ?? 0}");
-    // price = TextEditingController(text: "${widget.disc?.price ?? 0}");
+    setArtist();
   }
 
-  Future<void> setDisc({
+  void setArtist() async {
+    artists = await disc.artists;
+    artistNames = artists.map((e) => e.name).toList();
+    if (mounted) setState(() {});
+  }
+
+  void setDisc({
     String? name,
     int? releaseDate,
     List<int>? artistIDs,
     int? stockCount,
     double? price,
     ImageProvider? image,
-  }) async {
+  }) {
+    if (name == null &&
+        releaseDate == null &&
+        artistIDs == null &&
+        stockCount == null &&
+        price == null &&
+        image == null) return;
+
     disc = disc.copyWith(
       name: name,
       releaseDate: releaseDate,
@@ -74,20 +83,9 @@ class _DiscEditorState extends State<DiscEditor> {
       stockCount: stockCount,
       price: price,
     );
-    artists = await disc.artists;
-    artistNames = artists.map((e) => e.name).toList();
-    if (mounted) setState(() {});
+    widget.callback(disc);
+    artistIDs == null ? setState(() {}) : setArtist();
   }
-
-  // void _setCountNoCB(int count) {
-  //   setState(() => totalPrice = widget.disc.price * count);
-  //   this.count = count;
-  // }
-
-  // void setCount(int count) {
-  //   _setCountNoCB(count);
-  //   // widget.callback(widget.disc, count);
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +123,7 @@ class _DiscEditorState extends State<DiscEditor> {
 
     TableRow createRow(
       String header, {
-      String? defaultText,
+      TextEditingController? controller,
       TextInputType? keyboardType,
       void Function(String value)? onChanged,
     }) {
@@ -137,7 +135,7 @@ class _DiscEditorState extends State<DiscEditor> {
           child: Text(header),
         ),
         TextField(
-          controller: TextEditingController(text: defaultText),
+          controller: controller,
           keyboardType: keyboardType,
           decoration: InputDecoration(border: outlineInputBorder),
           onChanged: onChanged,
@@ -160,8 +158,8 @@ class _DiscEditorState extends State<DiscEditor> {
             children: [
               createRow(
                 "Track name",
-                defaultText: disc.name,
-                onChanged: (s) => setState(() => setDisc(name: s)),
+                controller: nameCtl,
+                onChanged: (s) => setDisc(name: s),
               ),
               rawTextEdit(
                 "Artists",
@@ -231,7 +229,7 @@ class _DiscEditorState extends State<DiscEditor> {
               ),
               createRow(
                 "Stock count",
-                defaultText: disc.stockCount.toString(),
+                controller: stockCtl,
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   setDisc(stockCount: int.tryParse(value) ?? 0);
@@ -239,7 +237,7 @@ class _DiscEditorState extends State<DiscEditor> {
               ),
               createRow(
                 "Price",
-                defaultText: disc.price.toString(),
+                controller: priceCtl,
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   setDisc(price: double.tryParse(value) ?? 0.0);
@@ -519,21 +517,11 @@ class _ArtistEditorState extends State<ArtistEditor> {
   late Artist artist = widget.artist ?? Artist(id: -1, name: "", albums: {});
   List<MapEntry<String, List<Disc>>> albums = [];
 
-  Future<void> setArtist({
-    String? name,
-    List<MapEntry<String, List<Disc>>>? albums,
-    int? debutDate,
-    String? description,
-  }) async {
-    artist = artist.copyWith(
-      name: name,
-      albums: Map.fromEntries(albums?.map(
-              (e) => MapEntry(e.key, e.value.map((d) => d.id).toList())) ??
-          artist.albums.entries),
-      debutDate: debutDate,
-      description: description,
-    );
-    this.albums.clear();
+  late final nameCtl = TextEditingController(text: artist.name);
+  late final descCtl = TextEditingController(text: artist.description);
+
+  void setAlbums() async {
+    albums.clear();
     for (var e in artist.albums.entries) {
       var k = e.key, v = e.value;
       List<Disc> ds = [];
@@ -542,15 +530,37 @@ class _ArtistEditorState extends State<ArtistEditor> {
           ds.add(await discFromID(d));
         } catch (_) {}
       }
-      this.albums.add(MapEntry(k, ds));
+      albums.add(MapEntry(k, ds));
     }
-    setState(() {});
+    if (mounted) setState(() {});
+  }
+
+  void setArtist({
+    String? name,
+    List<MapEntry<String, List<Disc>>>? albums,
+    int? debutDate,
+    String? description,
+  }) {
+    artist = artist.copyWith(
+      name: name,
+      debutDate: debutDate,
+      description: description,
+    );
+    if (albums != null) {
+      artist = artist.copyWith(
+        albums: Map.fromEntries(
+          albums.map((e) => MapEntry(e.key, e.value.map((d) => d.id).toList())),
+        ),
+      );
+    }
+    widget.callback(artist);
+    albums == null ? setState(() {}) : setAlbums();
   }
 
   @override
   void initState() {
     super.initState();
-    setArtist();
+    setAlbums();
   }
 
   @override
@@ -589,7 +599,7 @@ class _ArtistEditorState extends State<ArtistEditor> {
 
     TableRow createRow(
       String header, {
-      String? defaultText,
+      TextEditingController? controller,
       TextInputType? keyboardType,
       void Function(String value)? onChanged,
     }) {
@@ -601,7 +611,7 @@ class _ArtistEditorState extends State<ArtistEditor> {
           child: Text(header),
         ),
         TextField(
-          controller: TextEditingController(text: defaultText),
+          controller: controller,
           keyboardType: keyboardType,
           decoration: InputDecoration(border: outlineInputBorder),
           onChanged: onChanged,
@@ -620,13 +630,13 @@ class _ArtistEditorState extends State<ArtistEditor> {
         children: [
           createRow(
             "Artist name",
-            defaultText: artist.name,
-            onChanged: (s) => setState(() => setArtist(name: s)),
+            controller: nameCtl,
+            onChanged: (s) => setArtist(name: s),
           ),
           createRow(
             "Description",
-            defaultText: artist.description,
-            onChanged: (s) => setState(() => setArtist(description: s)),
+            controller: descCtl,
+            onChanged: (s) => setArtist(description: s),
           ),
           rawTextEdit(
             "Debut date",
@@ -637,9 +647,7 @@ class _ArtistEditorState extends State<ArtistEditor> {
               lastDate: DateTime.now(),
             ).then((date) {
               if (!mounted || date == null) return;
-              setState(() {
-                setArtist(debutDate: date.millisecondsSinceEpoch ~/ 1000);
-              });
+              setArtist(debutDate: date.millisecondsSinceEpoch ~/ 1000);
             }),
           ),
           TableRow(children: [
@@ -892,8 +900,12 @@ class _ArtistAddDialogState extends State<ArtistAddDialog> {
         ),
         TextButton(
           onPressed: () async {
-            // await Cart().checkout();
-            if (mounted) Navigator.pop(context);
+            await Data().fetch({
+              "method": "add",
+              "path": "artist",
+              "data": artists.where((d) => d != null).toList()
+            });
+            if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
             padding: const EdgeInsets.all(16),
@@ -981,11 +993,13 @@ class CustomerEditor extends StatefulWidget {
   final Customer? customer;
   final void Function(Customer customer) callback;
   final void Function(int id)? removeCallback;
+  final bool isAdd;
   const CustomerEditor({
     super.key,
     this.customer,
     required this.callback,
     this.removeCallback,
+    this.isAdd = false,
   });
 
   @override
@@ -994,7 +1008,16 @@ class CustomerEditor extends StatefulWidget {
 
 class _CustomerEditorState extends State<CustomerEditor> {
   late Customer customer = widget.customer ??
-      Customer(id: -1, name: "", phoneNo: [], createdDate: 0);
+      Customer(
+        id: -1,
+        name: "",
+        phoneNo: [],
+        createdDate:
+            widget.isAdd ? DateTime.now().millisecondsSinceEpoch ~/ 1000 : 0,
+      );
+
+  late final nameCtl = TextEditingController(text: customer.name);
+  late final mailCtl = TextEditingController(text: customer.email);
 
   void setCustomer({
     String? name,
@@ -1010,6 +1033,7 @@ class _CustomerEditorState extends State<CustomerEditor> {
         email: email,
       );
     });
+    widget.callback(customer);
   }
 
   @override
@@ -1048,7 +1072,7 @@ class _CustomerEditorState extends State<CustomerEditor> {
 
     TableRow createRow(
       String header, {
-      String? defaultText,
+      TextEditingController? controller,
       TextInputType? keyboardType,
       void Function(String value)? onChanged,
     }) {
@@ -1060,7 +1084,7 @@ class _CustomerEditorState extends State<CustomerEditor> {
           child: Text(header),
         ),
         TextField(
-          controller: TextEditingController(text: defaultText),
+          controller: controller,
           keyboardType: keyboardType,
           decoration: InputDecoration(border: outlineInputBorder),
           onChanged: onChanged,
@@ -1079,28 +1103,27 @@ class _CustomerEditorState extends State<CustomerEditor> {
         children: [
           createRow(
             "Customer name",
-            defaultText: customer.name,
-            onChanged: (s) => setState(() => setCustomer(name: s)),
+            controller: nameCtl,
+            onChanged: (s) => setCustomer(name: s),
           ),
           createRow(
             "Email",
-            defaultText: customer.email,
-            onChanged: (s) => setState(() => setCustomer(email: s)),
+            controller: mailCtl,
+            onChanged: (s) => setCustomer(email: s),
           ),
-          rawTextEdit(
-            "Create date",
-            DateFormat("dd/MM/yyyy").format(customer.createdDate),
-            onTap: () => showDatePicker(
-              context: context,
-              firstDate: DateTime.fromMillisecondsSinceEpoch(0),
-              lastDate: DateTime.now(),
-            ).then((date) {
-              if (!mounted || date == null) return;
-              setState(() {
+          if (!widget.isAdd)
+            rawTextEdit(
+              "Create date",
+              DateFormat("dd/MM/yyyy").format(customer.createdDate),
+              onTap: () => showDatePicker(
+                context: context,
+                firstDate: DateTime.fromMillisecondsSinceEpoch(0),
+                lastDate: DateTime.now(),
+              ).then((date) {
+                if (!mounted || date == null) return;
                 setCustomer(createdDate: date.millisecondsSinceEpoch ~/ 1000);
-              });
-            }),
-          ),
+              }),
+            ),
           TableRow(children: [
             const Text("Phone numbers"),
             CrossStartColumn(
@@ -1211,7 +1234,12 @@ class _SingleCustomerEditDialogState extends State<SingleCustomerEditDialog> {
         ),
         TextButton(
           onPressed: () async {
-            if (mounted) Navigator.pop(context);
+            await Data().fetch({
+              "method": "update",
+              "path": "disc",
+              "data": customer,
+            });
+            if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
             padding: const EdgeInsets.all(16),
@@ -1258,10 +1286,10 @@ class CustomerAddDialog extends StatefulWidget {
 class _CustomerAddDialogState extends State<CustomerAddDialog> {
   List<Customer?> customers = [
     Customer(
-      id: -1,
+      id: 0,
       name: "",
       phoneNo: [],
-      createdDate: 0,
+      createdDate: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     )
   ];
   @override
@@ -1299,8 +1327,12 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
         ),
         TextButton(
           onPressed: () async {
-            // await Cart().checkout();
-            if (mounted) Navigator.pop(context);
+            await Data().fetch({
+              "method": "add",
+              "path": "customer",
+              "data": customers.where((d) => d != null).toList()
+            });
+            if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
             padding: const EdgeInsets.all(16),
@@ -1326,7 +1358,7 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
             ...customers.where((e) => e != null).map<Widget>((e) {
               return CustomerEditor(
                 customer: e,
-                // showRemove: true,
+                isAdd: true,
                 callback: (a) => setState(() => customers[a.id] = a),
                 removeCallback: (id) async {
                   await Data().fetch({
@@ -1354,7 +1386,7 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
                       id: customers.length,
                       name: "",
                       phoneNo: [],
-                      createdDate: 0,
+                      createdDate: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     ));
                   }),
                   label: Text(

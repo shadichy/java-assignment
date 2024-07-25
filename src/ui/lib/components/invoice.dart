@@ -231,14 +231,16 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
         TextButton(
           onPressed: () async {
             if (customer == null) {
-              showDialog(
+              await showDialog(
                 context: context,
                 builder: (_) => const AlertDialog(
                   title: Text("No customer specified"),
                   content: Text("Please select an user"),
                 ),
               );
+              return;
             }
+            Cart().customer = customer;
             await Cart().checkout();
             if (context.mounted) Navigator.pop(context);
           },
