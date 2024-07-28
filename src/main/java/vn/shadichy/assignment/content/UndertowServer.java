@@ -32,6 +32,8 @@ import org.dizitart.no2.exceptions.UniqueConstraintException;
 import org.dizitart.no2.exceptions.ValidationException;
 import org.dizitart.no2.filters.Filter;
 import org.dizitart.no2.filters.NitriteFilter;
+import org.dizitart.no2.migration.InstructionSet;
+import org.dizitart.no2.migration.Migration;
 import org.dizitart.no2.mvstore.MVStoreModule;
 import org.dizitart.no2.repository.Cursor;
 import org.dizitart.no2.repository.ObjectRepository;
@@ -53,12 +55,15 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static org.dizitart.no2.filters.FluentFilter.*;
+import static org.dizitart.no2.filters.FluentFilter.$;
+import static org.dizitart.no2.filters.FluentFilter.where;
 import static vn.shadichy.assignment.internal.TypeCaster.*;
 
 public class UndertowServer extends Thread {
@@ -71,6 +76,7 @@ public class UndertowServer extends Thread {
     private final String username;
     private final String password;
     private final MVStoreModule storeModule;
+    private final char[] key;
 
     public UndertowServer(String host, String hostname, MVStoreModule storeModule, int httpPort, int httpsPort, String username, String password) {
         this.hostname = hostname;
@@ -80,6 +86,7 @@ public class UndertowServer extends Thread {
         this.username = username;
         this.password = password;
         this.storeModule = storeModule;
+        this.key = (username + ":" + password).toCharArray();
     }
 
     private static <T> List<T> reversedView(final List<T> list) {
@@ -114,8 +121,7 @@ public class UndertowServer extends Thread {
             if (offset > 0) opts = opts.skip(offset);
             if (limit > 0) opts = opts.limit(limit);
             cursor = repository.find(opts);
-        }
-        else if (filters.size() == 1) cursor = repository.find(filters.get(0));
+        } else if (filters.size() == 1) cursor = repository.find(filters.get(0));
         else cursor = repository.find(Filter.and(filters.toArray(new NitriteFilter[0])));
 
         return "[" + cursor.toList().stream().map(DatabaseEntry::get).collect(Collectors.joining(",")) + "]";
@@ -131,7 +137,7 @@ public class UndertowServer extends Thread {
             throw new RuntimeException(e);
         }
 
-        Nitrite db = Nitrite.builder()
+        final Nitrite db = Nitrite.builder()
                 .registerEntityConverter(new Artist.Converter())
                 .registerEntityConverter(new Customer.Converter())
                 .registerEntityConverter(new Disc.Converter())
@@ -340,6 +346,46 @@ public class UndertowServer extends Thread {
                                     statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
                                 }
                             }
+                            case "system" -> {
+                                int code = 0;
+                                switch ((String) body.get("path")) {
+                                    case "shutdown" -> {}
+                                    case "wipe" -> code = Paths.get(Main.confDir).toFile().delete() ? 0 : 1;
+                                    case "password" -> {
+                                        db.close();
+                                        String newPwd = String.valueOf(body.get("data"));
+                                        if (newPwd.equals("null") || newPwd.isEmpty()) {
+                                            result = "{\"response\": \"empty string\"}";
+                                            statusCode = StatusCodes.NOT_ACCEPTABLE;
+                                            code = -1;
+                                            break;
+                                        }
+                                        Nitrite.builder()
+                                                .registerEntityConverter(new Artist.Converter())
+                                                .registerEntityConverter(new Customer.Converter())
+                                                .registerEntityConverter(new Disc.Converter())
+                                                .registerEntityConverter(new Invoice.Converter())
+                                                .loadModule(storeModule)
+                                                .schemaVersion(0)
+                                                .addMigrations(new Migration(0, 1) {
+                                                    @Override
+                                                    public void migrate(InstructionSet set) {
+                                                        set.forDatabase().changePassword(username, password, newPwd);
+                                                    }
+                                                })
+                                                .openOrCreate(username, newPwd)
+                                                .close();
+                                        Main.CONFIG.toFile().delete();
+                                    }
+                                    default -> {
+                                        result = "{\"response\": \"illegal path\"}";
+                                        statusCode = StatusCodes.NOT_FOUND;
+                                        code = -1;
+                                    }
+                                }
+                                if (code == -1) break;
+                                System.exit(code);
+                            }
                             default -> {
                                 result = "{\"response\": \"illegal method\"}";
                                 statusCode = StatusCodes.NOT_FOUND;
@@ -397,7 +443,7 @@ public class UndertowServer extends Thread {
 
         try (InputStream is = stream) {
             KeyStore loadedKeystore = KeyStore.getInstance("JKS");
-            loadedKeystore.load(is, password.toCharArray());
+            loadedKeystore.load(is, key);
             return loadedKeystore;
         }
     }
@@ -406,7 +452,7 @@ public class UndertowServer extends Thread {
     private SSLContext createSSLContext(final KeyStore keyStore, final KeyStore trustStore) throws Exception {
         KeyManager[] keyManagers;
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keyStore, password.toCharArray());
+        keyManagerFactory.init(keyStore, key);
         keyManagers = keyManagerFactory.getKeyManagers();
 
         TrustManager[] trustManagers;

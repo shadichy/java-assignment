@@ -37,15 +37,17 @@ public class Main {
         final String username = stdin.next();
         final String password = stdin.next();
 
+        stdin.close();
+
         MVStoreModule storeModule = MVStoreModule.withConfig()
                 .filePath(dbPath)
                 .compress(true)
                 .build();
 
         if (!Files.exists(CONFIG) || !Files.isRegularFile(CONFIG)) {
-            Thread setup = new FirstRunSetup(storeModule, username, password);
+            Thread setup = new FirstRunSetup(username, password);
             setup.start();
-            setup.wait();
+            setup.join();
         }
 
         FileInputStream propFile = new FileInputStream(CONFIG.toFile());

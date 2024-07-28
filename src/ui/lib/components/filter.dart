@@ -24,12 +24,9 @@ class FilterDialog<T extends Filter> extends StatelessWidget {
       title: const Text("Filter invoices"),
       content: SizedBox(
         width: 600,   
-        child: Flexible(
-          fit: FlexFit.loose,
-          child: Table(
-            columnWidths: const {0: IntrinsicColumnWidth()},
-            children: children,
-          ),
+        child: Table(
+          columnWidths: const {0: IntrinsicColumnWidth()},
+          children: children,
         ),
       ),
       actions: [
