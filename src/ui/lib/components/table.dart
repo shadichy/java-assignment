@@ -242,10 +242,10 @@ class InvoiceTableRow {
             ),
           ).then((b) async {
             await Data().fetch({
-              "method": "remove",
+              "method": "delete",
               "path": "invoice",
               "id": invoice.id,
-            });
+            }).then((r) => print(r));
           }),
           style: TextButton.styleFrom(
             backgroundColor: c.tertiaryContainer,
@@ -562,10 +562,10 @@ class ArtistTableRow {
             ),
           ).then((b) async {
             await Data().fetch({
-              "method": "remove",
+              "method": "delete",
               "path": "artist",
               "id": artist.id,
-            });
+            }).then((r) => print(r));
           }),
           style: TextButton.styleFrom(
             backgroundColor: c.secondaryContainer,
@@ -618,7 +618,7 @@ class _ArtistTableState extends State<ArtistTable> {
           1: FixedColumnWidth(200),
           2: IntrinsicColumnWidth(),
           4: FixedColumnWidth(100),
-          6: FixedColumnWidth(100),
+          5: FixedColumnWidth(100),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [

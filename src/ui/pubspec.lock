@@ -9,14 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
-  badges:
-    dependency: "direct main"
-    description:
-      name: badges
-      sha256: a7b6bbd60dce418df0db3058b53f9d083c22cdb5132a052145dc267494df0b84
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.2"
   boolean_selector:
     dependency: transitive
     description:
@@ -155,14 +147,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
-  lifecycle:
-    dependency: "direct main"
-    description:
-      name: lifecycle
-      sha256: ad96a411440e8ab5b8dd63eb6345b1385863f33a09ae073e0ea110159ea81787
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.0"
   lints:
     dependency: transitive
     description:

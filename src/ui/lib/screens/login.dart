@@ -123,11 +123,13 @@ class _LoginState extends State<Login> {
                 }
                 if (await tryFetch(httpsPort, 5)) {
                   Data().init(username, password, httpPort, pid);
-                  Navigator.of( context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => const Home(),
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (_) => const Home(),
                   ));
                   return;
                 }
+                if (!context.mounted) return;
                 showDialog(
                   context: context,
                   barrierDismissible: true,

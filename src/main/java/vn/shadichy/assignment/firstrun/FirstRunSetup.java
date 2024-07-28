@@ -1,12 +1,7 @@
 package vn.shadichy.assignment.firstrun;
 
-import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.mvstore.MVStoreModule;
 import vn.shadichy.assignment.Main;
-import vn.shadichy.assignment.provider.Artist;
-import vn.shadichy.assignment.provider.Customer;
-import vn.shadichy.assignment.provider.Disc;
-import vn.shadichy.assignment.provider.Invoice;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -79,9 +74,9 @@ public class FirstRunSetup extends Thread {
 
             String keytool = jHome + s + "bin" + s + "keytool";
 
-            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-                keytool = keytool + ".exe";
-            }
+            boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+
+            if (isWindows) keytool = keytool + ".exe";
 
             String serverKeystore = confDir + s + "server.keystore.ks";
             String serverTruststore = confDir + s + "server.truststore.ks";
@@ -185,15 +180,16 @@ public class FirstRunSetup extends Thread {
             System.setProperty("client.keystore", clientKeystore);
             System.setProperty("client.truststore", clientTruststore);
 
+            String configContents = "server.keystore=" + serverKeystore + "\n" +
+                    "server.truststore=" + serverTruststore + "\n" +
+                    "client.keystore=" + clientKeystore + "\n" +
+                    "client.truststore=" + clientTruststore + "\n";
 
-            Files.writeString(Main.CONFIG,
-                    "server.keystore=" + serverKeystore + "\n" +
-                            "server.truststore=" + serverTruststore + "\n" +
-                            "client.keystore=" + clientKeystore + "\n" +
-                            "client.truststore=" + clientTruststore + "\n",
-                    StandardCharsets.UTF_8);
+            // There's a problem with file writing on windows that we need to double up the backslashes
+            if (isWindows) configContents = configContents.replaceAll(s, s + s);
 
-//            notifyAll();
+            Files.writeString(Main.CONFIG, configContents, StandardCharsets.UTF_8);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

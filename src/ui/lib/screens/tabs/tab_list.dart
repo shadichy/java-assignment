@@ -1,4 +1,5 @@
 import 'package:assignment/components/editor.dart';
+import 'package:assignment/components/filter.dart';
 import 'package:assignment/components/invoice.dart';
 import 'package:assignment/provider/filter.dart';
 import 'package:assignment/screens/tabs/home/summary.dart';
@@ -90,7 +91,16 @@ final class Tabs {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Text("Storage"),
         ),
-        filterButton(() {}),
+        filterButton(
+          () => showDialog<DiscFilter>(
+            context: context,
+            builder: (_) => const DiscFilterDialog(),
+          ).then((filter) {
+            if (filter == null) return;
+            Filters().discFilter = filter;
+            tabCallback(1, 3);
+          }),
+        ),
         const NavigationDrawerDestination(
           icon: Icon(Symbols.all_match),
           label: Text("All"),
@@ -150,7 +160,16 @@ final class Tabs {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Text("Invoices"),
         ),
-        filterButton(() {}),
+        filterButton(
+          () => showDialog<InvoiceFilter>(
+            context: context,
+            builder: (_) => const InvoiceFilterDialog(),
+          ).then((filter) {
+            if (filter == null) return;
+            Filters().invoiceFilter = filter;
+            tabCallback(2, 1);
+          }),
+        ),
         const NavigationDrawerDestination(
           icon: Icon(Symbols.all_match),
           label: Text("All"),
@@ -178,7 +197,16 @@ final class Tabs {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Text("Customers"),
         ),
-        filterButton(() {}),
+        filterButton(
+          () => showDialog<CustomerFilter>(
+            context: context,
+            builder: (_) => const CustomerFilterDialog(),
+          ).then((filter) {
+            if (filter == null) return;
+            Filters().customerFilter = filter;
+            tabCallback(2, 1);
+          }),
+        ),
         const NavigationDrawerDestination(
           icon: Icon(Symbols.all_match),
           label: Text("All"),

@@ -5,21 +5,19 @@ import 'package:assignment/components/misc/component.dart';
 import 'package:assignment/components/searcher.dart';
 import 'package:assignment/provider/account.dart';
 import 'package:assignment/provider/extensions.dart';
+import 'package:assignment/provider/filter.dart';
 import 'package:assignment/provider/product.dart';
-import 'package:assignment/screens/tabs/storage/filtered.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class DiscEditor extends StatefulWidget {
   final Disc? disc;
-  // final bool showRemove;
   final void Function(Disc disc) callback;
   final void Function(int id)? removeCallback;
   const DiscEditor(
     this.disc, {
     super.key,
-    // this.showRemove = false,
     required this.callback,
     this.removeCallback,
   });
@@ -45,10 +43,6 @@ class _DiscEditorState extends State<DiscEditor> {
   int count = 1;
   double totalPrice = 0;
 
-  late final nameCtl = TextEditingController(text: disc.name);
-  late final stockCtl = TextEditingController(text: "${disc.stockCount}");
-  late final priceCtl = TextEditingController(text: "${disc.price}");
-
   @override
   void initState() {
     super.initState();
@@ -67,7 +61,7 @@ class _DiscEditorState extends State<DiscEditor> {
     List<int>? artistIDs,
     int? stockCount,
     double? price,
-    ImageProvider? image,
+    String? image,
   }) {
     if (name == null &&
         releaseDate == null &&
@@ -82,6 +76,7 @@ class _DiscEditorState extends State<DiscEditor> {
       artistIDs: artistIDs,
       stockCount: stockCount,
       price: price,
+      image: image,
     );
     widget.callback(disc);
     artistIDs == null ? setState(() {}) : setArtist();
@@ -92,56 +87,20 @@ class _DiscEditorState extends State<DiscEditor> {
     ThemeData d = Theme.of(context);
     ColorScheme c = d.colorScheme;
     TextTheme t = d.textTheme;
+    TableRows tableRowData = TableRows(context);
 
-    var outlineInputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(width: 1, color: c.outline),
-    );
-
-    TableRow rawTextEdit(
-      String header,
-      String content, {
+    TableRow Function(
+      String,
+      String, {
       void Function()? onTap,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        Row(children: [
-          IconButton(
-            onPressed: onTap,
-            icon: Icon(Symbols.edit, color: c.onSurfaceVariant),
-          ),
-          const VerticalDivider(width: 8),
-          Text(content),
-        ]),
-      ]);
-    }
+    }) rawTextEdit = tableRowData.functional;
 
-    TableRow createRow(
-      String header, {
-      TextEditingController? controller,
+    TableRow Function(
+      String, {
+      String? defaultText,
       TextInputType? keyboardType,
-      void Function(String value)? onChanged,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(border: outlineInputBorder),
-          onChanged: onChanged,
-        ),
-      ]);
-    }
+      void Function(String)? onChanged,
+    }) createRow = tableRowData.textFiled;
 
     return Flexible(
       fit: FlexFit.loose,
@@ -158,7 +117,7 @@ class _DiscEditorState extends State<DiscEditor> {
             children: [
               createRow(
                 "Track name",
-                controller: nameCtl,
+                defaultText: disc.name,
                 onChanged: (s) => setDisc(name: s),
               ),
               rawTextEdit(
@@ -181,14 +140,7 @@ class _DiscEditorState extends State<DiscEditor> {
                           onPressed: () => showDialog(
                             context: context,
                             builder: (_) => const ArtistAddDialog(),
-                          ),
-                          // style: TextButton.styleFrom(
-                          //   padding: const EdgeInsets.all(16),
-                          //   shape: RoundedRectangleBorder(
-                          //     borderRadius: BorderRadius.circular(32),
-                          //     side: BorderSide(color: c.tertiary),
-                          //   ),
-                          // ),
+                          ),      
                           icon: Icon(
                             Symbols.add,
                             color: c.tertiary,
@@ -210,6 +162,11 @@ class _DiscEditorState extends State<DiscEditor> {
                   setDisc(artistIDs: v.map((e) => e.id).toList());
                 }),
               ),
+              createRow(
+                "Image",
+                defaultText: disc.imageURL,
+                onChanged: (s) => setDisc(image: s),
+              ),
               rawTextEdit(
                 "Release date",
                 DateFormat("dd/MM/yyyy").format(disc.releaseDate),
@@ -229,7 +186,7 @@ class _DiscEditorState extends State<DiscEditor> {
               ),
               createRow(
                 "Stock count",
-                controller: stockCtl,
+                defaultText: "${disc.stockCount}",
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   setDisc(stockCount: int.tryParse(value) ?? 0);
@@ -237,7 +194,7 @@ class _DiscEditorState extends State<DiscEditor> {
               ),
               createRow(
                 "Price",
-                controller: priceCtl,
+                defaultText: "${disc.price}",
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   setDisc(price: double.tryParse(value) ?? 0.0);
@@ -315,7 +272,7 @@ class _SingleDiscEditDialogState extends State<SingleDiscEditDialog> {
               "method": "update",
               "path": "disc",
               "data": disc,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -344,7 +301,7 @@ class _SingleDiscEditDialogState extends State<SingleDiscEditDialog> {
               "method": "delete",
               "path": "disc",
               "id": disc.id,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
         ),
@@ -410,7 +367,7 @@ class _DiscAddDialogState extends State<DiscAddDialog> {
               "method": "add",
               "path": "disc",
               "data": discs.where((d) => d != null).toList()
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -444,7 +401,7 @@ class _DiscAddDialogState extends State<DiscAddDialog> {
                     "method": "delete",
                     "path": "disc",
                     "id": id,
-                  });
+                  }).then((r) => print(r));
                   if (mounted) setState(() => discs[id] = null);
                 },
               );
@@ -517,9 +474,6 @@ class _ArtistEditorState extends State<ArtistEditor> {
   late Artist artist = widget.artist ?? Artist(id: -1, name: "", albums: {});
   List<MapEntry<String, List<Disc>>> albums = [];
 
-  late final nameCtl = TextEditingController(text: artist.name);
-  late final descCtl = TextEditingController(text: artist.description);
-
   void setAlbums() async {
     albums.clear();
     for (var e in artist.albums.entries) {
@@ -568,56 +522,22 @@ class _ArtistEditorState extends State<ArtistEditor> {
     ThemeData d = Theme.of(context);
     ColorScheme c = d.colorScheme;
     TextTheme t = d.textTheme;
+    TableRows tableRowData = TableRows(context);
 
-    var outlineInputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(width: 1, color: c.outline),
-    );
+    var outlineInputBorder = tableRowData.inputBorder;
 
-    TableRow rawTextEdit(
-      String header,
-      String content, {
+    TableRow Function(
+      String,
+      String, {
       void Function()? onTap,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        Row(children: [
-          IconButton(
-            onPressed: onTap,
-            icon: Icon(Symbols.edit, color: c.onSurfaceVariant),
-          ),
-          const VerticalDivider(width: 8),
-          Text(content),
-        ]),
-      ]);
-    }
+    }) rawTextEdit = tableRowData.functional;
 
-    TableRow createRow(
-      String header, {
-      TextEditingController? controller,
+    TableRow Function(
+      String, {
+      String? defaultText,
       TextInputType? keyboardType,
-      void Function(String value)? onChanged,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(border: outlineInputBorder),
-          onChanged: onChanged,
-        ),
-      ]);
-    }
+      void Function(String)? onChanged,
+    }) createRow = tableRowData.textFiled;
 
     return Flexible(
       fit: FlexFit.loose,
@@ -630,12 +550,12 @@ class _ArtistEditorState extends State<ArtistEditor> {
         children: [
           createRow(
             "Artist name",
-            controller: nameCtl,
+            defaultText: artist.name,
             onChanged: (s) => setArtist(name: s),
           ),
           createRow(
             "Description",
-            controller: descCtl,
+            defaultText: artist.description,
             onChanged: (s) => setArtist(description: s),
           ),
           rawTextEdit(
@@ -715,8 +635,8 @@ class _ArtistEditorState extends State<ArtistEditor> {
                     ),
                     SizedBox(
                       width: 120,
-                      child: TextField(
-                        controller: TextEditingController(text: e.key),
+                      child: TextFormField(
+                        initialValue: e.key,
                         decoration: InputDecoration(border: outlineInputBorder),
                         onChanged: (v) {
                           albums[albums.indexOf(e)] = (MapEntry(v, e.value));
@@ -812,7 +732,7 @@ class _SingleArtistEditDialogState extends State<SingleArtistEditDialog> {
               "method": "update",
               "path": "artist",
               "data": artist,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -841,7 +761,7 @@ class _SingleArtistEditDialogState extends State<SingleArtistEditDialog> {
               "method": "delete",
               "path": "artist",
               "id": artist.id,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
         ),
@@ -904,7 +824,7 @@ class _ArtistAddDialogState extends State<ArtistAddDialog> {
               "method": "add",
               "path": "artist",
               "data": artists.where((d) => d != null).toList()
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -938,7 +858,7 @@ class _ArtistAddDialogState extends State<ArtistAddDialog> {
                     "method": "delete",
                     "path": "artist",
                     "id": id,
-                  });
+                  }).then((r) => print(r));
                   if (mounted) setState(() => artists[id] = null);
                 },
               );
@@ -1016,9 +936,6 @@ class _CustomerEditorState extends State<CustomerEditor> {
             widget.isAdd ? DateTime.now().millisecondsSinceEpoch ~/ 1000 : 0,
       );
 
-  late final nameCtl = TextEditingController(text: customer.name);
-  late final mailCtl = TextEditingController(text: customer.email);
-
   void setCustomer({
     String? name,
     List<String>? phoneNo,
@@ -1041,56 +958,22 @@ class _CustomerEditorState extends State<CustomerEditor> {
     ThemeData d = Theme.of(context);
     ColorScheme c = d.colorScheme;
     TextTheme t = d.textTheme;
+    TableRows tableRowData = TableRows(context);
 
-    var outlineInputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(width: 1, color: c.outline),
-    );
+    var outlineInputBorder = tableRowData.inputBorder;
 
-    TableRow rawTextEdit(
-      String header,
-      String content, {
+    TableRow Function(
+      String,
+      String, {
       void Function()? onTap,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        Row(children: [
-          IconButton(
-            onPressed: onTap,
-            icon: Icon(Symbols.edit, color: c.onSurfaceVariant),
-          ),
-          const VerticalDivider(width: 8),
-          Text(content),
-        ]),
-      ]);
-    }
+    }) rawTextEdit = tableRowData.functional;
 
-    TableRow createRow(
-      String header, {
-      TextEditingController? controller,
+    TableRow Function(
+      String, {
+      String? defaultText,
       TextInputType? keyboardType,
-      void Function(String value)? onChanged,
-    }) {
-      return TableRow(children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          height: 60,
-          padding: const EdgeInsets.only(right: 32),
-          child: Text(header),
-        ),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(border: outlineInputBorder),
-          onChanged: onChanged,
-        ),
-      ]);
-    }
+      void Function(String)? onChanged,
+    }) createRow = tableRowData.textFiled;
 
     return Flexible(
       fit: FlexFit.loose,
@@ -1103,12 +986,12 @@ class _CustomerEditorState extends State<CustomerEditor> {
         children: [
           createRow(
             "Customer name",
-            controller: nameCtl,
+            defaultText: customer.name,
             onChanged: (s) => setCustomer(name: s),
           ),
           createRow(
             "Email",
-            controller: mailCtl,
+            defaultText: customer.email,
             onChanged: (s) => setCustomer(email: s),
           ),
           if (!widget.isAdd)
@@ -1143,8 +1026,8 @@ class _CustomerEditorState extends State<CustomerEditor> {
                     const VerticalSeparator(width: 8),
                     SizedBox(
                       width: 240,
-                      child: TextField(
-                        controller: TextEditingController(text: e),
+                      child: TextFormField(
+                        initialValue: e,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(border: outlineInputBorder),
                         // onChanged: (v)=>,
@@ -1236,9 +1119,9 @@ class _SingleCustomerEditDialogState extends State<SingleCustomerEditDialog> {
           onPressed: () async {
             await Data().fetch({
               "method": "update",
-              "path": "disc",
+              "path": "customer",
               "data": customer,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -1267,7 +1150,7 @@ class _SingleCustomerEditDialogState extends State<SingleCustomerEditDialog> {
               "method": "delete",
               "path": "customer",
               "id": customer.id,
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
         ),
@@ -1331,7 +1214,7 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
               "method": "add",
               "path": "customer",
               "data": customers.where((d) => d != null).toList()
-            });
+            }).then((r) => print(r));
             if (context.mounted) Navigator.pop(context);
           },
           style: TextButton.styleFrom(
@@ -1365,7 +1248,7 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
                     "method": "delete",
                     "path": "customer",
                     "id": id,
-                  });
+                  }).then((r) => print(r));
                   if (mounted) setState(() => customers[id] = null);
                 },
               );
@@ -1386,7 +1269,8 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
                       id: customers.length,
                       name: "",
                       phoneNo: [],
-                      createdDate: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                      createdDate:
+                          DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     ));
                   }),
                   label: Text(

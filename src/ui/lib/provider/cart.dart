@@ -44,7 +44,7 @@ final class Cart {
       "method": "add",
       "path": "invoice",
       "data": [createInvoice],
-    });
+    }).then((r) => print(r));
     _cart.clear();
     customer = null;
     (notifier ?? () {})();

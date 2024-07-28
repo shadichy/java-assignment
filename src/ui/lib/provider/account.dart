@@ -80,11 +80,13 @@ final class Data {
         db.remove(db.firstWhere((e) => e.id == (origData as T).id));
       default:
         throw ClientException("Invalid method");
-    } 
+    }
   }
 
   Future fetch(Map body) async {
-    var response = jsonDecode((await post(Uri.https("$hostname:$httpsPort"), headers: {"Authorization": encode}, body: jsonEncode(body))).body);
+    var response = jsonDecode((await post(Uri.https("$hostname:$httpsPort"),
+            headers: {"Authorization": encode}, body: jsonEncode(body)))
+        .body);
 
     // if (body["path"]! is String || body["moethod"]! is String) return response;
 

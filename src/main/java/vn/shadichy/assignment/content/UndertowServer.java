@@ -25,6 +25,7 @@ import io.undertow.util.HttpString;
 import io.undertow.util.StatusCodes;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.collection.FindOptions;
+import org.dizitart.no2.common.SortOrder;
 import org.dizitart.no2.common.WriteResult;
 import org.dizitart.no2.exceptions.NotIdentifiableException;
 import org.dizitart.no2.exceptions.UniqueConstraintException;
@@ -34,7 +35,6 @@ import org.dizitart.no2.filters.NitriteFilter;
 import org.dizitart.no2.mvstore.MVStoreModule;
 import org.dizitart.no2.repository.Cursor;
 import org.dizitart.no2.repository.ObjectRepository;
-import org.dizitart.no2.spatial.SpatialModule;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
 import vn.shadichy.assignment.Main;
@@ -58,9 +58,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.dizitart.no2.filters.FluentFilter.$;
-import static org.dizitart.no2.filters.FluentFilter.where;
-import static vn.shadichy.assignment.internal.TypeCaster.castList;
+import static org.dizitart.no2.filters.FluentFilter.*;
+import static vn.shadichy.assignment.internal.TypeCaster.*;
 
 public class UndertowServer extends Thread {
 
@@ -83,6 +82,20 @@ public class UndertowServer extends Thread {
         this.storeModule = storeModule;
     }
 
+    private static <T> List<T> reversedView(final List<T> list) {
+        return new AbstractList<T>() {
+            @Override
+            public T get(int index) {
+                return list.get(list.size() - 1 - index);
+            }
+
+            @Override
+            public int size() {
+                return list.size();
+            }
+        };
+    }
+
     private HttpHandler addSecurity(final HttpHandler toWrap, final IdentityManager identityManager) {
         HttpHandler handler = toWrap;
         handler = new AuthenticationCallHandler(handler);
@@ -93,44 +106,19 @@ public class UndertowServer extends Thread {
         return handler;
     }
 
-    private static <T> List<T> reversedView(final List<T> list)
-    {
-        return new AbstractList<T>()
-        {
-            @Override
-            public T get(int index)
-            {
-                return list.get(list.size()-1-index);
-            }
-
-            @Override
-            public int size()
-            {
-                return list.size();
-            }
-        };
-    }
-
     private <T extends DatabaseEntry> String findToArr(ObjectRepository<T> repository, List<NitriteFilter> filters, int offset, int limit) {
         Cursor<T> cursor;
 
-        FindOptions opts = new FindOptions();
-
-        if (filters.isEmpty()) cursor = repository.find();
+        if (filters.isEmpty()) {
+            FindOptions opts = FindOptions.orderBy("date", SortOrder.Descending);
+            if (offset > 0) opts = opts.skip(offset);
+            if (limit > 0) opts = opts.limit(limit);
+            cursor = repository.find(opts);
+        }
         else if (filters.size() == 1) cursor = repository.find(filters.get(0));
         else cursor = repository.find(Filter.and(filters.toArray(new NitriteFilter[0])));
 
-        List<T> result = cursor.toList();
-//        try {
-//            if (result.get(0) instanceof Invoice) Collections.reverse(result);
-//        } catch (Exception ignored) {
-//        }
-//        Collections.reverse(result);
-
-        Stream<T> stream = reversedView(result).stream().filter(Objects::nonNull).skip(offset);
-        if (limit > 0) stream = stream.limit(limit);
-
-        return "[" + stream.map(DatabaseEntry::get).collect(Collectors.joining(",")) + "]";
+        return "[" + cursor.toList().stream().map(DatabaseEntry::get).collect(Collectors.joining(",")) + "]";
     }
 
     @Override
@@ -149,23 +137,22 @@ public class UndertowServer extends Thread {
                 .registerEntityConverter(new Disc.Converter())
                 .registerEntityConverter(new Invoice.Converter())
                 .loadModule(storeModule)
-                .loadModule(new SpatialModule())
                 .openOrCreate(username, password);
 
         final ObjectRepository<Artist> artists = db.getRepository(Artist.class, "Artist");
         final ObjectRepository<Customer> customers = db.getRepository(Customer.class, "Customer");
         final ObjectRepository<Disc> discs = db.getRepository(Disc.class, "Disc");
         final ObjectRepository<Invoice> invoices = db.getRepository(Invoice.class, "Invoice");
-        Function<Object, WriteResult> removeInvoice = id -> invoices.remove(invoices.getById(id));
-        Function<Object, WriteResult> removeDisc = id -> {
+        Function<Integer, WriteResult> removeInvoice = id -> invoices.remove(invoices.getById(id));
+        Function<Integer, WriteResult> removeDisc = id -> {
             invoices.remove(where("trackIDs").elemMatch($.eq(id)));
             return discs.remove(discs.getById(id));
         };
-        Function<Object, WriteResult> removeCustomer = id -> {
+        Function<Integer, WriteResult> removeCustomer = id -> {
             invoices.remove(where("customer").eq(id));
             return customers.remove(customers.getById(id));
         };
-        Function<Object, WriteResult> removeArtist = id -> {
+        Function<Integer, WriteResult> removeArtist = id -> {
             discs.find(where("artists").elemMatch($.eq(id))).forEach(disc -> removeDisc.apply(disc.getId()));
             return artists.remove(artists.getById(id));
         };
@@ -193,14 +180,14 @@ public class UndertowServer extends Thread {
                         String result = "{\"response\": \"ok\"}";
                         switch ((String) body.get("method")) {
                             case "get" -> {
-                                Integer limit = TypeCaster.toInt(body.get("limit"));
+                                Integer limit = toInt(body.get("limit"));
                                 if (limit == null) limit = 60;
-                                Integer offset = TypeCaster.toInt(body.get("offset"));
+                                Integer offset = toInt(body.get("offset"));
                                 if (offset == null) offset = 0;
 
                                 List<NitriteFilter> f = new ArrayList<>(List.of());
 
-                                Integer id = TypeCaster.toInt(body.get("id"));
+                                Integer id = toInt(body.get("id"));
 
                                 switch ((String) body.get("path")) {
                                     case "artist" -> {
@@ -212,9 +199,9 @@ public class UndertowServer extends Thread {
                                         if (name != null) f.add(where("name").regex(name));
                                         String desc = (String) body.get("description");
                                         if (desc != null) f.add(where("description").regex(desc));
-                                        Long debutBefore = TypeCaster.toLong(body.get("debutBefore"));
+                                        Long debutBefore = toLong(body.get("debutBefore"));
                                         if (debutBefore != null) f.add(where("date").lte(debutBefore));
-                                        Integer debutAfter = TypeCaster.toInt(body.get("debutAfter"));
+                                        Integer debutAfter = toInt(body.get("debutAfter"));
                                         if (debutAfter != null) f.add(where("date").gte(debutAfter));
                                         List<String> hasAlbums = (List) body.get("hasAlbums");
                                         if (hasAlbums != null && !hasAlbums.isEmpty()) {
@@ -235,9 +222,9 @@ public class UndertowServer extends Thread {
                                         if (name != null) f.add(where("name").regex(name));
                                         String email = (String) body.get("email");
                                         if (email != null) f.add(where("desc").regex(email));
-                                        Integer createdBefore = TypeCaster.toInt(body.get("createdBefore"));
+                                        Integer createdBefore = toInt(body.get("createdBefore"));
                                         if (createdBefore != null) f.add(where("date").lte(createdBefore));
-                                        Integer createdAfter = TypeCaster.toInt(body.get("createdAfter"));
+                                        Integer createdAfter = toInt(body.get("createdAfter"));
                                         if (createdAfter != null) f.add(where("date").gte(createdAfter));
                                         List<String> hasPhones = (List) body.get("hasPhones");
                                         if (hasPhones != null && !hasPhones.isEmpty())
@@ -251,21 +238,21 @@ public class UndertowServer extends Thread {
                                         }
                                         String name = (String) body.get("name");
                                         if (name != null) f.add(where("name").regex(name));
-                                        Integer releaseBefore = TypeCaster.toInt(body.get("releaseBefore"));
+                                        Integer releaseBefore = toInt(body.get("releaseBefore"));
                                         if (releaseBefore != null) f.add(where("date").lte(releaseBefore));
-                                        Integer releaseAfter = TypeCaster.toInt(body.get("releaseAfter"));
+                                        Integer releaseAfter = toInt(body.get("releaseAfter"));
                                         if (releaseAfter != null) f.add(where("date").gte(releaseAfter));
-                                        Integer stockHighest = TypeCaster.toInt(body.get("stockHighest"));
+                                        Integer stockHighest = toInt(body.get("stockHighest"));
                                         if (stockHighest != null) f.add(where("stockCount").lte(stockHighest));
-                                        Integer stockLowest = TypeCaster.toInt(body.get("stockLowest"));
+                                        Integer stockLowest = toInt(body.get("stockLowest"));
                                         if (stockLowest != null) f.add(where("stockCount").gte(stockLowest));
-                                        Integer priceHighest = TypeCaster.toInt(body.get("priceHighest"));
+                                        Integer priceHighest = toInt(body.get("priceHighest"));
                                         if (priceHighest != null) f.add(where("price").lte(priceHighest));
-                                        Integer priceLowest = TypeCaster.toInt(body.get("priceLowest"));
+                                        Integer priceLowest = toInt(body.get("priceLowest"));
                                         if (priceLowest != null) f.add(where("price").gte(priceLowest));
                                         List<?> hasArtists = (List<?>) body.get("hasArtists");
                                         if (hasArtists != null && !hasArtists.isEmpty())
-                                            f.add(where("artists").elemMatch($.in((castList(hasArtists, TypeCaster::toDouble)).toArray(new Double[0]))));
+                                            f.add(where("artists").elemMatch($.in((castList(hasArtists, TypeCaster::toInt)).toArray(new Integer[0]))));
                                         result = findToArr(discs, f, offset, limit);
 
                                     }
@@ -274,11 +261,11 @@ public class UndertowServer extends Thread {
                                             result = invoices.getById(id).toString();
                                             break;
                                         }
-                                        Integer customer = TypeCaster.toInt(body.get("customer"));
+                                        Integer customer = toInt(body.get("customer"));
                                         if (customer != null) f.add(where("customer").eq(customer));
-                                        Integer before = TypeCaster.toInt(body.get("before"));
+                                        Integer before = toInt(body.get("before"));
                                         if (before != null) f.add(where("date").lte(before));
-                                        Integer after = TypeCaster.toInt(body.get("after"));
+                                        Integer after = toInt(body.get("after"));
                                         if (after != null) f.add(where("date").gte(after));
                                         List<?> hasDiscs = (List<?>) body.get("hasDiscs");
                                         if (hasDiscs != null && !hasDiscs.isEmpty())
@@ -337,11 +324,12 @@ public class UndertowServer extends Thread {
                             }
                             case "delete" -> {
                                 try {
+                                    int id = toInt(body.get("id"));
                                     switch ((String) body.get("path")) {
-                                        case "artist" -> removeArtist.apply(body.get("id"));
-                                        case "customer" -> removeCustomer.apply(body.get("id"));
-                                        case "disc" -> removeDisc.apply(body.get("id"));
-                                        case "invoice" -> removeInvoice.apply(body.get("id"));
+                                        case "artist" -> removeArtist.apply(id);
+                                        case "customer" -> removeCustomer.apply(id);
+                                        case "disc" -> removeDisc.apply(id);
+                                        case "invoice" -> removeInvoice.apply(id);
                                         default -> {
                                             result = "{\"response\": \"illegal path\"}";
                                             statusCode = StatusCodes.NOT_FOUND;

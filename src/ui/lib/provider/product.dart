@@ -48,7 +48,7 @@ Future<Artist> artistFromID(int id) async {
 Future<List<Invoice>> _history(int customer) async => (await Data().fetch({
       "method": "get",
       "path": "invoice",
-      "customer": customer,
+      "hasCustomers": [customer],
     }) as List)
         .map((e) => Invoice.fromMap(e))
         .toList();
@@ -148,7 +148,7 @@ final class Disc extends BaseAbstractProduct {
   final List<int> artistIDs;
   final int stockCount;
   final double price;
-  ImageProvider image;
+  String? _image;
 
   Future<List<Artist>> get artists async {
     List<Artist> r = [];
@@ -163,19 +163,31 @@ final class Disc extends BaseAbstractProduct {
     required super.id,
     required this.name,
     required int releaseDate,
-    ImageProvider? image,
+    String? image,
     required this.artistIDs,
     required this.stockCount,
     required this.price,
-  })  : image = image ??
-            const NetworkImage(
-                "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Cdefs%3E%3Cstyle%20type='text/css'%3E@font-face%20{%20font-family:%20'Material%20Symbols%20Outlined';%20src:%20url%28https://fonts.gstatic.com/s/materialsymbolsoutlined/v190/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2%29%20format%28'woff2'%29;}%20text%20{font-family:'Material%20Symbols%20Outlined';%20font-size:%2032px;%20text-anchor:%20middle;%20dominant-baseline:%20text-bottom;%20fill:%20grey;}%3C/style%3E%3C/defs%3E%3Ctext%20xmlns='http://www.w3.org/2000/svg'%20x='50%'%20y='100%'%3E&%23xe019;%3C/text%3E%3C/svg%3E|width=32,height=32"),
+  })  : _image = image,
         releaseDate = _epoch(releaseDate);
+
+  static ImageProvider defaultImage =
+      const AssetImage("assets/images/vinyl.png");
+
+  ImageProvider get image {
+    try {
+      if (_image == null || _image == "") throw Exception();
+      return NetworkImage(_image!);
+    } catch (_) {
+      return defaultImage;
+    }
+  }
+
+  String? get imageURL => _image;
 
   Disc.fromMap(Map data)
       : this(
           id: data["id"],
-          name:_dec(data["name"]),
+          name: _dec(data["name"]),
           releaseDate: data["date"],
           artistIDs: (data["artists"] as List?)?.map((e) {
                 return (e as num).toInt();
@@ -183,15 +195,7 @@ final class Disc extends BaseAbstractProduct {
               [],
           stockCount: data["stockCount"] ?? 0,
           price: data["price"] ?? 0,
-          image: data["image"] is String
-              ? (() {
-                  try {
-                    return NetworkImage(data["image"]);
-                  } catch (e) {
-                    return null;
-                  }
-                })()
-              : null,
+          image: data["image"] as String?,
         );
 
   Disc.fromJson(Map data) : this.fromMap(data);
@@ -201,7 +205,7 @@ final class Disc extends BaseAbstractProduct {
         "id": id,
         "name": name,
         "releaseDate": releaseDate.millisecondsSinceEpoch ~/ 1000,
-        "image": image.toString(),
+        "image": _image,
         "artists": artistIDs,
         "stockCount": stockCount,
         "price": price,
@@ -225,17 +229,17 @@ final class Disc extends BaseAbstractProduct {
     List<int>? artistIDs,
     int? stockCount,
     double? price,
-    ImageProvider? image,
+    String? image,
   }) {
     return Disc(
-      id: id,
-      name: name ?? this.name,
-      releaseDate:
-          releaseDate ?? this.releaseDate.millisecondsSinceEpoch ~/ 1000,
-      artistIDs: artistIDs ?? this.artistIDs,
-      stockCount: stockCount ?? this.stockCount,
-      price: price ?? this.price,
-    );
+        id: id,
+        name: name ?? this.name,
+        releaseDate:
+            releaseDate ?? this.releaseDate.millisecondsSinceEpoch ~/ 1000,
+        artistIDs: artistIDs ?? this.artistIDs,
+        stockCount: stockCount ?? this.stockCount,
+        price: price ?? this.price,
+        image: image ?? _image);
   }
 }
 
@@ -265,10 +269,10 @@ final class Customer extends BaseAbstractProduct {
   Customer.fromMap(Map data)
       : this(
           id: data["id"],
-          name:_dec(data["name"]),
+          name: _dec(data["name"]),
           phoneNo: (data["phoneNo"] as List?)?.cast<String>() ?? [],
           createdDate: data["date"],
-          email:_dec(data["email"]),
+          email: _dec(data["email"]),
         );
 
   Customer.fromJson(Map data) : this.fromMap(data);

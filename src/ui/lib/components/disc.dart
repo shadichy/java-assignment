@@ -22,9 +22,7 @@ class DiscImage extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           image: DecorationImage(
-            image: image ??
-                const NetworkImage(
-                    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Cdefs%3E%3Cstyle%20type='text/css'%3E@font-face%20{%20font-family:%20'Material%20Symbols%20Outlined';%20src:%20url%28https://fonts.gstatic.com/s/materialsymbolsoutlined/v190/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2%29%20format%28'woff2'%29;}%20text%20{font-family:'Material%20Symbols%20Outlined';%20font-size:%2032px;%20text-anchor:%20middle;%20dominant-baseline:%20text-bottom;%20fill:%20grey;}%3C/style%3E%3C/defs%3E%3Ctext%20xmlns='http://www.w3.org/2000/svg'%20x='50%'%20y='100%'%3E&%23xe019;%3C/text%3E%3C/svg%3E|width=32,height=32"),
+            image: image ?? Disc.defaultImage,
             fit: BoxFit.cover,
           ),
           border: Border.all(width: size / 24, color: c.outline),
@@ -174,93 +172,6 @@ class _DiscCardState extends State<DiscCard> {
           )
         ]),
       ),
-    );
-  }
-}
-
-class DiscExtendedCard extends StatefulWidget {
-  final Disc disc;
-  final bool baseEditable;
-  const DiscExtendedCard(
-    this.disc, {
-    super.key,
-    this.baseEditable = false,
-  });
-
-  @override
-  State<DiscExtendedCard> createState() => _DiscExtendedCardState();
-}
-
-class _DiscExtendedCardState extends State<DiscExtendedCard> {
-  late final Disc disc = widget.disc;
-  late List<Artist> artists = [];
-
-  @override
-  void initState() {
-    super.initState();
-    (() async {
-      List<Artist> artists = await disc.artists;
-      setState(() => this.artists = artists);
-    })();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    ThemeData d = Theme.of(context);
-    ColorScheme c = d.colorScheme;
-    TextTheme t = d.textTheme;
-    TableRow textBlock(String title, String content, [bool editable = false]) {
-      return TableRow(
-        children: [
-          Text(title),
-          const VerticalSeparator(width: 10),
-          editable
-              ? TextField(
-                  decoration: InputDecoration(
-                    hintText: content,
-                    labelText: content,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(width: 1, color: c.outline),
-                    ),
-                  ),
-                )
-              : Text(content)
-        ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        InkWell(
-          child: DiscImage(image: disc.image, size: 240),
-        ),
-        Fill(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("title"),
-              const Divider(height: 32, color: Colors.transparent),
-              Table(
-                columnWidths: const {
-                  0: FixedColumnWidth(120),
-                  1: FixedColumnWidth(10),
-                },
-                children: [
-                  textBlock("Track name", disc.name, widget.baseEditable),
-                  textBlock("Artists", artists.map((e) => e.name).join(", ")),
-                  textBlock("Release date", disc.releaseDate.toString()),
-                  textBlock("In stock", "${disc.stockCount}"),
-                  textBlock("Price/CD", "\$${disc.price}"),
-                ],
-              ),
-              const Text("History"),
-            ],
-          ),
-        )
-      ],
     );
   }
 }

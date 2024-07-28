@@ -10,6 +10,8 @@
 
 // import 'package:assignment/main.dart';
 
+// ignore_for_file: avoid_print
+
 class CC {
   int a, b;
   CC(this.a, this.b);
@@ -56,3 +58,4 @@ void main() {
     }
 
   }
+        

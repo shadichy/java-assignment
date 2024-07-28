@@ -8,7 +8,7 @@ import vn.shadichy.assignment.content.UndertowServer;
 import vn.shadichy.assignment.firstrun.FirstRunSetup;
 
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,23 +24,10 @@ public class Main {
     public static final Path lockfile = Paths.get(System.getProperty("java.io.tmpdir") + s + "port.asn");
 
     private static final String hostname = System.getProperty("assignment.hostname", "localhost");
-    private static final int dbPort = Integer.parseInt(System.getProperty("assignment.dbport", "27017"));
     private static final int httpPort = Integer.parseInt(System.getProperty("assignment.httpport", "8080"));
     private static final int httpsPort = Integer.parseInt(System.getProperty("assignment.httpsport", "8443"));
     private static final String dbName = System.getProperty("assignment.dbname", "AssignmentDiscDB");
     public static final String dbPath = confDir + s + dbName + ".db";
-
-    private static class ExitHook extends Thread {
-        private final Path lockfile;
-
-        private ExitHook(Path lockfile) {
-            this.lockfile = lockfile;
-        }
-        @Override
-        public void run() {
-            lockfile.toFile().delete();
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         Properties p = new Properties(System.getProperties());
@@ -66,14 +53,23 @@ public class Main {
         propFile.close();
         System.setProperties(p);
 
-        FileWriter lock = new FileWriter(lockfile.toFile());
-        lock.write(String.valueOf(httpPort));
-        lock.close();
+        Files.writeString(lockfile, String.valueOf(httpPort), StandardCharsets.UTF_8);
 
         Runtime.getRuntime().addShutdownHook(new ExitHook(lockfile));
 
-//        new LoginExecutor(hostname, dbPort, dbName, username, password);
-
         new UndertowServer("https://" + hostname + ":" + httpsPort, hostname, storeModule, httpPort, httpsPort, username, password).start();
+    }
+
+    private static class ExitHook extends Thread {
+        private final Path lockfile;
+
+        private ExitHook(Path lockfile) {
+            this.lockfile = lockfile;
+        }
+
+        @Override
+        public void run() {
+            lockfile.toFile().delete();
+        }
     }
 }

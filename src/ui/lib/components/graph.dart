@@ -1,4 +1,3 @@
-// import 'package:fl_chart_app/presentation/resources/app_resources.dart';
 import 'package:assignment/provider/product.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -73,9 +72,6 @@ final class _GraphViewData {
 enum _GraphViewMode { week, month, year }
 
 final class GraphView {
-  // final int maxRows;
-  // final int maxColumn;
-  // List<Invoice> data;
   final _GraphViewMode _mode;
   const GraphView._(this._mode);
   Future<_GraphViewData> _getData(List<Invoice> data) async =>

@@ -37,23 +37,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.dizitart</groupId>
-            <artifactId>nitrite-spatial</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-            <version>6.6.4</version>
-        </dependency>
-        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2-mvstore</artifactId>
             <version>2.2.224</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.dizitart</groupId>
-            <artifactId>nitrite-rocksdb-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.dizitart</groupId>
