@@ -396,14 +396,7 @@ class _DiscAddDialogState extends State<DiscAddDialog> {
                 e,
                 // showRemove: true,
                 callback: (disc) => setState(() => discs[disc.id] = disc),
-                removeCallback: (id) async {
-                  await Data().fetch({
-                    "method": "delete",
-                    "path": "disc",
-                    "id": id,
-                  }).then((r) => print(r));
-                  if (mounted) setState(() => discs[id] = null);
-                },
+                removeCallback: (id) => setState(() => discs[id] = null),
               );
             }).separatedBy(Divider(
               height: 32,
@@ -853,14 +846,7 @@ class _ArtistAddDialogState extends State<ArtistAddDialog> {
                 artist: e,
                 // showRemove: true,
                 callback: (a) => setState(() => artists[a.id] = a),
-                removeCallback: (id) async {
-                  await Data().fetch({
-                    "method": "delete",
-                    "path": "artist",
-                    "id": id,
-                  }).then((r) => print(r));
-                  if (mounted) setState(() => artists[id] = null);
-                },
+                removeCallback: (id) => setState(() => artists[id] = null),
               );
             }).separatedBy(Divider(
               height: 32,
@@ -1243,14 +1229,7 @@ class _CustomerAddDialogState extends State<CustomerAddDialog> {
                 customer: e,
                 isAdd: true,
                 callback: (a) => setState(() => customers[a.id] = a),
-                removeCallback: (id) async {
-                  await Data().fetch({
-                    "method": "delete",
-                    "path": "customer",
-                    "id": id,
-                  }).then((r) => print(r));
-                  if (mounted) setState(() => customers[id] = null);
-                },
+                removeCallback: (id) => setState(() => customers[id] = null),
               );
             }).separatedBy(Divider(
               height: 32,

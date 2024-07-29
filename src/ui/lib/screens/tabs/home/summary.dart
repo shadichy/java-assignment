@@ -50,8 +50,6 @@ class _HomeSummaryState extends State<HomeSummary> {
       DateTime thisMonth = now.subtract(Duration(days: days));
       var m = r.map((e) => Invoice.fromMap(e as Map));
       data = m.where((e) => e.date.isAfter(thisMonth)).toList();
-      // setState(() {});
-      // print(data.map((e) => e.toJson()));
       revenue = 0;
       product = 0;
       for (var t in data.fold<List<MapEntry<int, int>>>(
@@ -59,7 +57,7 @@ class _HomeSummaryState extends State<HomeSummary> {
         (p, n) => [...p, ...n.trackIDs.entries],
       )) {
         var k = t.key, v = t.value;
-        soldByProduct[k] = soldByProduct[k] ?? 0 + v;
+        soldByProduct[k] = (soldByProduct[k] ?? 0) + v;
         if (productTable[k] == null) {
           Disc d = await discFromID(k);
           productTable[k] = d;
@@ -69,8 +67,7 @@ class _HomeSummaryState extends State<HomeSummary> {
           }
         }
         revenue += productTable[k]!.price * v;
-        product += v;
-        // }
+        product += v; 
       }
       double pRevenue = 0;
       for (var e in m.where((e) => e.date.isBefore(thisMonth))) {
@@ -105,10 +102,7 @@ class _HomeSummaryState extends State<HomeSummary> {
                 padding: const EdgeInsets.all(16),
                 child: CrossStartColumn([
                   const Text("Sale"),
-                  const Divider(
-                    height: 4,
-                    color: Colors.transparent,
-                  ),
+                  const Separator(height: 4),
                   Text(
                     "Estimated",
                     style: t.bodySmall?.copyWith(
@@ -118,7 +112,7 @@ class _HomeSummaryState extends State<HomeSummary> {
                 ]),
               ),
               SizedBox(
-                height: 240,
+                height: 240 ,
                 child: GraphLineChart(view: Settings().graphView, data: data),
               ),
             ])),

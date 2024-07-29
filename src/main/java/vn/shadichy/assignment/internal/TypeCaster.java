@@ -7,10 +7,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 public abstract class TypeCaster {
-    public static Integer intOf(Object value) {
-        return toInt(value);
-    }
-
     public static Integer toInt(Object value) {
         return toInt(value, null);
     }
@@ -21,10 +17,6 @@ public abstract class TypeCaster {
         if (value instanceof Integer) return (Integer) value;
         if (value instanceof Double) return ((Double) value).intValue();
         throw new ClassCastException("Failed to cast " + value + " to Int");
-    }
-
-    public static Long longOf(Object value) {
-        return toLong(value);
     }
 
     public static Long toLong(Object value) {
@@ -38,10 +30,6 @@ public abstract class TypeCaster {
         if (value instanceof Integer) return ((Integer) value).longValue();
         if (value instanceof Double) return ((Double) value).longValue();
         throw new ClassCastException("Failed to cast " + value + " to Long");
-    }
-
-    public static Double doubleOf(Object value) {
-        return toDouble(value);
     }
 
     public static Double toDouble(Object value) {
@@ -82,6 +70,14 @@ public abstract class TypeCaster {
         public CastMap(Map<K1, V1> data) {
             this(data, k1 -> (K) k1, v1 -> (V) v1);
         }
+
+        public <K2, V2> CastMap<K, V, K2, V2> cast(Function<K, K2> keyCaster, Function<V, V2> valueCaster) {
+            return new CastMap<>(this, keyCaster, valueCaster);
+        }
+
+        public <K2, V2> CastMap<K, V, K2, V2> cast() {
+            return new CastMap<>(this);
+        }
     }
 
     public static class CastList<T, R> extends ArrayList<R> {
@@ -91,6 +87,14 @@ public abstract class TypeCaster {
 
         public CastList(List<T> data) {
             this(data, e -> (R) e);
+        }
+
+        public <Q> CastList<R, Q> cast(Function<R, Q> caster) {
+            return new CastList<>(this, caster);
+        }
+
+        public <Q> CastList<R, Q> cast() {
+            return new CastList<>(this);
         }
 
     }

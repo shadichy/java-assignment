@@ -43,11 +43,9 @@ final class _GraphViewData {
     final int timeGap = (maxTime ~/ maxColumns) ~/ pointsPerGap;
     DateTime now = DateTime.now();
     int c = maxColumns.ceil() * pointsPerGap;
-    // List<List<Invoice>> chunked = List.generate(maxColumns, (_) => []);
     data = [];
     while (c-- > 0) {
       now = now.subtract(Duration(seconds: timeGap));
-      // chunked[c].addAll(_iData.where((e) => e.date.isAfter(now)));
       double total = 0;
       for (var e in iData.where((e) => e.date.isAfter(now))) {
         total += await e.totalPrice;
@@ -213,7 +211,6 @@ class _GraphLineChartState extends State<GraphLineChart> {
             isCurved: true,
             color: c.tertiary,
             barWidth: 4,
-            // isStrokeCapRound: true,
             curveSmoothness: 0,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(show: false),
@@ -224,11 +221,6 @@ class _GraphLineChartState extends State<GraphLineChart> {
         maxY: _data.maxRows,
         minY: 0,
       ),
-      // switch (view) {
-      //   GraphView.week => weekViewData,
-      //   GraphView.month => sampleData2,
-      //   GraphView.year => sampleData2,
-      // },
       curve: Curves.ease,
       duration: const Duration(milliseconds: 250),
     );

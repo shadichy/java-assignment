@@ -82,9 +82,7 @@ final class Tabs {
           ),
         ),
       ], [
-        const HomeSummary(),
-        // const HomeInvoice(),
-        // const HomeImport(),
+        const HomeSummary(),  
       ]),
       SectionList([
         const Padding(
