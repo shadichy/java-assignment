@@ -107,6 +107,10 @@ public class Disc extends DatabaseEntry implements Serializable {
         this.image = image;
     }
 
+    public void reduceStock(Integer byAmount) {
+        this.stockCount -= byAmount;
+    }
+
     @Override
     public Map<String, Object> map() {
         return new HashMap<>() {{

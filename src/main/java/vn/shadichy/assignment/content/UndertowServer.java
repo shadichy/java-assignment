@@ -275,7 +275,15 @@ public class UndertowServer extends Thread {
                             case "artist" -> artists.insert(castList(data, Artist::addNew).toArray(new Artist[0]));
                             case "customer" -> customers.insert(castList(data, Customer::addNew).toArray(new Customer[0]));
                             case "disc" -> discs.insert(castList(data, Disc::addNew).toArray(new Disc[0]));
-                            case "invoice" -> invoices.insert(castList(data, Invoice::fromMap).toArray(new Invoice[0]));
+                            case "invoice" -> {
+                                List<Invoice> invoiceList = castList(data, Invoice::fromMap);
+                                invoices.insert(invoiceList.toArray(new Invoice[0]));
+                                invoiceList.forEach(invoice -> invoice.getTracks().forEach((track, count) -> {
+                                    Disc target = discs.getById(track);
+                                    target.reduceStock(count);
+                                    discs.update(target);
+                                }));
+                            }
                             default -> {
                                 result = "{\"response\": \"illegal path\"}";
                                 statusCode = StatusCodes.NOT_FOUND;

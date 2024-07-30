@@ -157,7 +157,6 @@ final class Disc extends BaseAbstractProduct {
     }
     return r;
   }
-  // List<Invoice> get history => _history(track: id);
 
   Disc({
     required super.id,

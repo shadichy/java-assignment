@@ -41,10 +41,8 @@ final class Data {
   void addToCache<T extends BaseAbstractProduct>(
     dynamic origData,
     dynamic response,
-    String method,
     String path,
   ) {
-    // Iterable<T> castedAdder = adder.cast();
     List<T> db = (switch (path) {
       "artist" => _artists,
       "disc" => _discs,
@@ -54,33 +52,17 @@ final class Data {
     })
         .cast();
 
-    switch (method) {
-      case "get":
-        Iterable<int> ids = db.map((e) => e.id);
-        db.addAll(
-            (response is Map ? [response] : (response as List).cast<Map>())
-                .map(switch (path) {
-                  "artist" => Artist.fromMap,
-                  "disc" => Disc.fromMap,
-                  "customer" => Customer.fromMap,
-                  "invoice" => Invoice.fromMap,
-                  _ => throw ClientException("Invalid path"),
-                })
-                .where((e) => !ids.contains(e.id))
-                .cast());
-        break;
-      case "add":
-        db.addAll(origData as List<T>);
-        break;
-      case "update":
-        db.remove(db.firstWhere((e) => e.id == (origData as T).id));
-        db.add(origData as T);
-        break;
-      case "remove":
-        db.remove(db.firstWhere((e) => e.id == (origData as T).id));
-      default:
-        throw ClientException("Invalid method");
-    }
+    Iterable<int> ids = db.map((e) => e.id);
+    db.addAll((response is Map ? [response] : (response as List).cast<Map>())
+        .map(switch (path) {
+          "artist" => Artist.fromMap,
+          "disc" => Disc.fromMap,
+          "customer" => Customer.fromMap,
+          "invoice" => Invoice.fromMap,
+          _ => throw ClientException("Invalid path"),
+        })
+        .where((e) => !ids.contains(e.id))
+        .cast());
   }
 
   Future fetch(Map body) async {
@@ -88,14 +70,10 @@ final class Data {
             headers: {"Authorization": encode}, body: jsonEncode(body)))
         .body);
 
-    // if (body["path"]! is String || body["moethod"]! is String) return response;
+    if (body["method"] == "get") {
+      addToCache(body["data"], response, body["path"]);
+    }
 
-    String method = body["method"];
-    String path = body["path"];
-
-    // addToCache(body["data"], response, method, path);
-    if (body["method"] != "get") return response;
-    addToCache(body["data"], response, method, path);
     return response;
   }
 }

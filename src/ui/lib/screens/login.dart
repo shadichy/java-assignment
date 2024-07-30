@@ -24,15 +24,9 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   String username = '';
   String password = '';
-  static const _chars =
-      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-  final Random _rnd = Random();
-
-  String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
-      length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
 
   Future<bool> tryFetch(int port, int trials) async {
-    if (trials == 0) return false;
+    if (trials-- == 0) return false;
     try {
       await get(Uri.https("${Data().hostname}:$port"), headers: {
         "Authorization":
@@ -40,8 +34,10 @@ class _LoginState extends State<Login> {
       });
       return true;
     } catch (e) {
-      await Future.delayed(const Duration(milliseconds: 1500));
-      return await tryFetch(port, trials--);
+      return await Future<bool>.delayed(
+        const Duration(milliseconds: 1500),
+        () async => await tryFetch(port, trials),
+      );
     }
   }
 
@@ -91,24 +87,17 @@ class _LoginState extends State<Login> {
                 int httpsPort;
                 int pid = -1;
                 if ((port.existsSync())) {
-                  httpPort = int.parse(port.readAsStringSync());
-                  httpsPort = httpPort + 1000;
+                  httpsPort = int.parse(port.readAsStringSync());
+                  httpPort = httpsPort - 1000;
                 } else {
                   httpPort = Random().nextInt(6999) + 2000;
                   httpsPort = httpPort + 1000;
+                  // hard-coded path of server jar
                   String jar =
                       "../../target/artifact-1.0-SNAPSHOT-jar-with-dependencies.jar";
-                  // File authFile = File.fromUri(Uri.file(
-                  //     "${await getTemporaryDirectory()}/${getRandomString(8)}.tmp"));
-                  // await authFile.create();
-                  // authFile.writeAsStringSync(
-                  //     "assignment.user=${username.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}\nassignment.psk=${password.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}");
                   Process p = await Process.start("java", [
-                    // "-Dassignment.authfile=${authFile.uri.toFilePath()}",
                     "-Dassignment.httpport=$httpPort",
                     "-Dassignment.httpsport=$httpsPort",
-                    // "-Dassignment.dbname=AssignmentDiscDB",
-                    // "-Dassignment.dbpasswordless=false",
                     "-jar",
                     jar
                   ]);
@@ -118,8 +107,8 @@ class _LoginState extends State<Login> {
                   });
                   p.stdin.writeln(username);
                   p.stdin.writeln(password);
-                  stderr.addStream(p.stderr);
-                  stdout.addStream(p.stdout);
+                  // stderr.addStream(p.stderr);
+                  // stdout.addStream(p.stdout);
                 }
                 if (await tryFetch(httpsPort, 5)) {
                   Data().init(username, password, httpPort, pid);

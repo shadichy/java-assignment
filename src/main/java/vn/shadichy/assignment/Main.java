@@ -1,8 +1,5 @@
 package vn.shadichy.assignment;
 
-//import com.mongodb.reactivestreams.client.MongoClient;
-//import com.mongodb.reactivestreams.client.MongoClients;
-
 import org.dizitart.no2.mvstore.MVStoreModule;
 import vn.shadichy.assignment.content.UndertowServer;
 import vn.shadichy.assignment.firstrun.FirstRunSetup;
@@ -21,28 +18,19 @@ public class Main {
     public static final String uHome = System.getProperty("user.home");
     public static final String confDir = uHome + s + ".assignment.conf.d";
     public static final Path CONFIG = Paths.get(confDir + s + ".java.assignment.conf");
-    public static final Path lockfile = Paths.get(System.getProperty("java.io.tmpdir") + s + "port.asn");
 
+    private static final Path lockfile = Paths.get(System.getProperty("java.io.tmpdir") + s + "port.asn");
     private static final String hostname = System.getProperty("assignment.hostname", "localhost");
     private static final int httpPort = Integer.parseInt(System.getProperty("assignment.httpport", "8080"));
     private static final int httpsPort = Integer.parseInt(System.getProperty("assignment.httpsport", "8443"));
     private static final String dbName = System.getProperty("assignment.dbname", "AssignmentDiscDB");
-    public static final String dbPath = confDir + s + dbName + ".db";
+    private static final String dbPath = confDir + s + dbName + ".db";
 
     public static void main(String[] args) throws Exception {
-        Properties p = new Properties(System.getProperties());
-
         Scanner stdin = new Scanner(System.in);
-
         final String username = stdin.next();
         final String password = stdin.next();
-
         stdin.close();
-
-        MVStoreModule storeModule = MVStoreModule.withConfig()
-                .filePath(dbPath)
-                .compress(true)
-                .build();
 
         if (!Files.exists(CONFIG) || !Files.isRegularFile(CONFIG)) {
             Thread setup = new FirstRunSetup(username, password);
@@ -50,14 +38,19 @@ public class Main {
             setup.join();
         }
 
+        Properties p = new Properties(System.getProperties());
         FileInputStream propFile = new FileInputStream(CONFIG.toFile());
         p.load(propFile);
         propFile.close();
         System.setProperties(p);
 
-        Files.writeString(lockfile, String.valueOf(httpPort), StandardCharsets.UTF_8);
-
+        Files.writeString(lockfile, String.valueOf(httpsPort), StandardCharsets.UTF_8);
         Runtime.getRuntime().addShutdownHook(new ExitHook(lockfile));
+
+        MVStoreModule storeModule = MVStoreModule.withConfig()
+                .filePath(dbPath)
+                .compress(true)
+                .build();
 
         new UndertowServer("https://" + hostname + ":" + httpsPort, hostname, storeModule, httpPort, httpsPort, username, password).start();
     }

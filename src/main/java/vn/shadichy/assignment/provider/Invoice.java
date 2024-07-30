@@ -56,6 +56,10 @@ public class Invoice extends DatabaseEntry implements Serializable {
         return TypeCaster.castMap(tracks, TypeCaster::toInt, TypeCaster::toInt);
     }
 
+    public Map<Integer, Integer> getTracks() {
+        return tracks;
+    }
+
     public Map<String, Object> map() {
         return new HashMap<>() {{
             put("id", id);
